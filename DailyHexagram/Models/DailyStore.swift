@@ -18,11 +18,16 @@ final class DailyStore: ObservableObject {
         load()
     }
 
-    static var todayString: String {
+    /// Cached formatter — creating a DateFormatter per call is a classic main-thread cost.
+    private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         f.locale = Locale(identifier: "en_US_POSIX")
-        return f.string(from: Date())
+        return f
+    }()
+
+    static var todayString: String {
+        dayFormatter.string(from: Date())
     }
 
     func load() {

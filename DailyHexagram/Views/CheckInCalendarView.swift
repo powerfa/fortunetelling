@@ -6,10 +6,20 @@ struct CheckInCalendarView: View {
     @AppStorage("appLanguage") private var lang = "zh"
     @State private var monthOffset = 0   // 0 = current month, negative = earlier
 
-    private var calendar: Calendar {
+    // Cached calendars & formatters — rebuilding per render costs frames.
+    private static let zhCalendar: Calendar = {
         var c = Calendar(identifier: .gregorian)
-        c.firstWeekday = lang == "zh" ? 2 : 1   // 中文周一起，英文周日起
+        c.firstWeekday = 2   // 中文周一起
         return c
+    }()
+    private static let enCalendar: Calendar = {
+        var c = Calendar(identifier: .gregorian)
+        c.firstWeekday = 1   // 英文周日起
+        return c
+    }()
+
+    private var calendar: Calendar {
+        lang == "zh" ? Self.zhCalendar : Self.enCalendar
     }
 
     private static let keyFormatter: DateFormatter = {
@@ -19,16 +29,26 @@ struct CheckInCalendarView: View {
         return f
     }()
 
+    private static let zhMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "zh_CN")
+        f.dateFormat = "yyyy年M月"
+        return f
+    }()
+    private static let enMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US")
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
     private var displayedMonth: Date {
         let start = calendar.date(from: calendar.dateComponents([.year, .month], from: Date()))!
         return calendar.date(byAdding: .month, value: monthOffset, to: start)!
     }
 
     private var monthTitle: String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: lang == "zh" ? "zh_CN" : "en_US")
-        f.dateFormat = lang == "zh" ? "yyyy年M月" : "MMMM yyyy"
-        return f.string(from: displayedMonth)
+        (lang == "zh" ? Self.zhMonthFormatter : Self.enMonthFormatter).string(from: displayedMonth)
     }
 
     private var weekdaySymbols: [String] {

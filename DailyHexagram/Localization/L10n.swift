@@ -110,10 +110,21 @@ enum L10n {
         }
     }
 
-    static func dateText(lang: String) -> String {
+    // Cached date formatters (rebuilding them on every view render causes jank).
+    private static let zhDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.locale = Locale(identifier: lang == "zh" ? "zh_CN" : "en_US")
+        f.locale = Locale(identifier: "zh_CN")
         f.dateStyle = .full
-        return f.string(from: Date())
+        return f
+    }()
+    private static let enDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US")
+        f.dateStyle = .full
+        return f
+    }()
+
+    static func dateText(lang: String) -> String {
+        (lang == "zh" ? zhDateFormatter : enDateFormatter).string(from: Date())
     }
 }

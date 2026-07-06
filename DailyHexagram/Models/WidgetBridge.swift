@@ -28,8 +28,11 @@ enum WidgetBridge {
         UserDefaults(suiteName: appGroup)
     }
 
+    /// All writers skip the (expensive) timeline reload when nothing actually changed —
+    /// e.g. every app launch re-writes the same snapshot.
     static func update(result: DivinationResult?) {
         guard let defaults else { return }
+        var newData: Data? = nil
         if let result {
             let hex = result.primary
             let snapshot = Snapshot(
@@ -46,9 +49,11 @@ enum WidgetBridge {
                 xiangZh: hex.xiangZh,
                 xiangEn: hex.xiangEn
             )
-            if let data = try? JSONEncoder().encode(snapshot) {
-                defaults.set(data, forKey: snapshotKey)
-            }
+            newData = try? JSONEncoder().encode(snapshot)
+        }
+        guard defaults.data(forKey: snapshotKey) != newData else { return }
+        if let newData {
+            defaults.set(newData, forKey: snapshotKey)
         } else {
             defaults.removeObject(forKey: snapshotKey)
         }
@@ -56,12 +61,14 @@ enum WidgetBridge {
     }
 
     static func setPremium(_ isPremium: Bool) {
-        defaults?.set(isPremium, forKey: premiumKey)
+        guard let defaults, defaults.bool(forKey: premiumKey) != isPremium else { return }
+        defaults.set(isPremium, forKey: premiumKey)
         WidgetCenter.shared.reloadAllTimelines()
     }
 
     static func setLanguage(_ lang: String) {
-        defaults?.set(lang, forKey: langKey)
+        guard let defaults, defaults.string(forKey: langKey) != lang else { return }
+        defaults.set(lang, forKey: langKey)
         WidgetCenter.shared.reloadAllTimelines()
     }
 }
