@@ -1,0 +1,121 @@
+{
+  "identifier" : "A1B2C3D4-0000-4000-9000-DAILYHEXAGRM",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "C060",
+      "localizations" : [
+        {
+          "description" : "60 coins for recasts",
+          "displayName" : "60 福币",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.dj.DailyHexagram.coins60",
+      "referenceName" : "Coins 60",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "C200",
+      "localizations" : [
+        {
+          "description" : "200 coins for recasts",
+          "displayName" : "200 福币",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.dj.DailyHexagram.coins200",
+      "referenceName" : "Coins 200",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "7.99",
+      "familyShareable" : false,
+      "internalID" : "C600",
+      "localizations" : [
+        {
+          "description" : "600 coins for recasts",
+          "displayName" : "600 福币",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.dj.DailyHexagram.coins600",
+      "referenceName" : "Coins 600",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "PREMIUMGRP01",
+      "localizations" : [
+
+      ],
+      "name" : "Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "1.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "SUBM",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Detailed readings: career, love, wealth, health",
+              "displayName" : "月度会员 Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.dj.DailyHexagram.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Premium Monthly",
+          "subscriptionGroupID" : "PREMIUMGRP01",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "12.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "SUBY",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Detailed readings: career, love, wealth, health",
+              "displayName" : "年度会员 Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.dj.DailyHexagram.premium.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Yearly",
+          "subscriptionGroupID" : "PREMIUMGRP01",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
