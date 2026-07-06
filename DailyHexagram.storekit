@@ -7,46 +7,61 @@
     {
       "displayPrice" : "0.99",
       "familyShareable" : false,
-      "internalID" : "C060",
+      "internalID" : "C0030",
       "localizations" : [
         {
-          "description" : "60 coins for recasts",
-          "displayName" : "60 福币",
+          "description" : "30 coins",
+          "displayName" : "30 福币",
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.dj.DailyHexagram.coins60",
-      "referenceName" : "Coins 60",
+      "productID" : "com.dj.DailyHexagram.coins30",
+      "referenceName" : "Coins 30",
       "type" : "Consumable"
     },
     {
-      "displayPrice" : "2.99",
+      "displayPrice" : "4.99",
       "familyShareable" : false,
-      "internalID" : "C200",
+      "internalID" : "C0180",
       "localizations" : [
         {
-          "description" : "200 coins for recasts",
-          "displayName" : "200 福币",
+          "description" : "180 coins — good value",
+          "displayName" : "180 福币",
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.dj.DailyHexagram.coins200",
-      "referenceName" : "Coins 200",
+      "productID" : "com.dj.DailyHexagram.coins180",
+      "referenceName" : "Coins 180",
       "type" : "Consumable"
     },
     {
-      "displayPrice" : "7.99",
+      "displayPrice" : "19.99",
       "familyShareable" : false,
-      "internalID" : "C600",
+      "internalID" : "C0800",
       "localizations" : [
         {
-          "description" : "600 coins for recasts",
-          "displayName" : "600 福币",
+          "description" : "800 coins — better value",
+          "displayName" : "800 福币",
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.dj.DailyHexagram.coins600",
-      "referenceName" : "Coins 600",
+      "productID" : "com.dj.DailyHexagram.coins800",
+      "referenceName" : "Coins 800",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "49.99",
+      "familyShareable" : false,
+      "internalID" : "C2500",
+      "localizations" : [
+        {
+          "description" : "2500 coins — best value",
+          "displayName" : "2500 福币",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.dj.DailyHexagram.coins2500",
+      "referenceName" : "Coins 2500",
       "type" : "Consumable"
     }
   ],

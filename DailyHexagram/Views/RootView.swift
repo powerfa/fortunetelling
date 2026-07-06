@@ -45,9 +45,11 @@ struct TodayTab: View {
                     Button {
                         showStore = true
                     } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "circle.circle.fill")
-                                .foregroundStyle(.yellow)
+                        HStack(spacing: 5) {
+                            Image("CoinIcon")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 22, height: 22)
                             Text("\(coins.balance)")
                                 .font(.subheadline.bold())
                         }

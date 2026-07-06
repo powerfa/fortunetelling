@@ -4,7 +4,7 @@ import Foundation
 enum L10n {
     private static let table: [String: (zh: String, en: String)] = [
         "app_title":       ("每日一卦", "Daily Hexagram"),
-        "cast_prompt":     ("诚心默念所问之事，掷币六次，自下而上成卦", "Hold your question in mind, then toss the coins six times to build the hexagram from the bottom up"),
+        "cast_prompt":     ("诚心默念所问之事，掷币六次，自下而上成卦", "Hold your question in mind, then toss six times"),
         "toss_button":     ("掷  币", "Toss Coins"),
         "toss_progress":   ("第 %d 爻 · 共六爻", "Line %d of 6"),
         "reveal_button":   ("查看卦象", "Reveal Hexagram"),
@@ -21,7 +21,7 @@ enum L10n {
         "disclaimer":      ("结果仅供参考娱乐", "For reflection and entertainment only"),
         "done":            ("完成", "Done"),
         // 曾仕强「三不占」
-        "three_no":        ("不诚不占 · 不义不占 · 不疑不占", "Divine only with sincerity, for what is right, and when truly in doubt"),
+        "three_no":        ("不诚不占 · 不义不占 · 不疑不占", "Sincerity · Righteousness · True doubt"),
         // Premium detail readings
         "premium_section": ("四维详批", "Detailed Reading"),
         "career":          ("事业", "Career"),
@@ -41,10 +41,11 @@ enum L10n {
         // Store
         "store_title":     ("福币与会员", "Coins & Premium"),
         "balance":         ("当前福币", "Coin Balance"),
-        "check_in":        ("每日签到 +2 福币", "Daily Check-in +2 Coins"),
+        "check_in":        ("每日签到", "Daily Check-in"),
         "checked_in":      ("今日已签到", "Checked in today"),
+        "checkin_rule":    ("签到奖励：每日 +1 福币，会员 +2。红圈为已签到日。", "Check-in reward: +1 coin daily, +2 with Premium. Red circles mark checked-in days."),
         "premium_title":   ("会员", "Premium"),
-        "premium_benefits": ("· 事业、爱情、财运、健康四维深度详批\n· 桌面小组件：每日卦象一览", "· In-depth readings: career, love, wealth & health\n· Home Screen widget: today's hexagram at a glance"),
+        "premium_benefits": ("· 事业、爱情、财运、健康四维深度详批\n· 桌面小组件：每日卦象一览\n· 每日签到双倍福币", "· In-depth readings: career, love, wealth & health\n· Home Screen widget: today's hexagram at a glance\n· Double daily check-in coins"),
         "premium_active":  ("会员已开通", "Premium is active"),
         "restore":         ("恢复购买", "Restore Purchases"),
         "coin_packs":      ("福币充值", "Coin Packs"),
@@ -54,7 +55,7 @@ enum L10n {
         "tab_history":     ("历史", "History"),
         "tab_guide":       ("知识", "Learn"),
         // Question (所问之事)
-        "question_placeholder": ("所问何事？（可留空，默认问今日运势）", "What is your question? (optional — defaults to today's fortune)"),
+        "question_placeholder": ("所问何事？（可留空）", "Your question (optional)"),
         "question_label":  ("所问", "Question"),
         "default_question": ("今日运势", "Today's fortune"),
         // 象传
@@ -73,9 +74,12 @@ enum L10n {
         // Product names (shown instead of StoreKit displayName, so they follow the app language)
         "prod_monthly":    ("月度会员", "Premium Monthly"),
         "prod_yearly":     ("年度会员", "Premium Yearly"),
-        "prod_coins60":    ("60 福币", "60 Coins"),
-        "prod_coins200":   ("200 福币", "200 Coins"),
-        "prod_coins600":   ("600 福币", "600 Coins"),
+        "prod_coins30":    ("30 福币", "30 Coins"),
+        "prod_coins180":   ("180 福币", "180 Coins"),
+        "prod_coins800":   ("800 福币", "800 Coins"),
+        "prod_coins2500":  ("2500 福币", "2500 Coins"),
+        "save_pct":        ("省 %d%%", "Save %d%%"),
+        "best_value":      ("最划算", "Best Value"),
         "debug_premium_on":  ("测试：开启会员", "Debug: Enable Premium"),
         "debug_premium_off": ("测试：关闭会员", "Debug: Disable Premium"),
     ]

@@ -23,10 +23,14 @@ struct CastView: View {
             Text(L10n.t("three_no", lang))
                 .font(.system(.footnote, design: .serif))
                 .foregroundStyle(Color.accentColor.opacity(0.8))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal)
 
             Text(L10n.t("cast_prompt", lang))
                 .font(.system(.body, design: .serif))
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal)
 
             if values.isEmpty {

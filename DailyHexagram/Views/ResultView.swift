@@ -219,8 +219,14 @@ struct ResultView: View {
             Button {
                 showStore = true
             } label: {
-                Label(L10n.t("not_enough_coins", lang), systemImage: "circle.circle.fill")
-                    .font(.body.bold())
+                HStack(spacing: 6) {
+                    Image("CoinIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                    Text(L10n.t("not_enough_coins", lang))
+                        .font(.body.bold())
+                }
             }
             .buttonStyle(.bordered)
         }

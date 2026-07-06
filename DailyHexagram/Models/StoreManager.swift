@@ -5,13 +5,14 @@ import StoreKit
 @MainActor
 final class StoreManager: ObservableObject {
     enum ProductID {
-        static let monthly  = "com.dj.DailyHexagram.premium.monthly"
-        static let yearly   = "com.dj.DailyHexagram.premium.yearly"
-        static let coins60  = "com.dj.DailyHexagram.coins60"
-        static let coins200 = "com.dj.DailyHexagram.coins200"
-        static let coins600 = "com.dj.DailyHexagram.coins600"
-        static let all = [monthly, yearly, coins60, coins200, coins600]
-        static let coinAmounts: [String: Int] = [coins60: 60, coins200: 200, coins600: 600]
+        static let monthly   = "com.dj.DailyHexagram.premium.monthly"
+        static let yearly    = "com.dj.DailyHexagram.premium.yearly"
+        static let coins30   = "com.dj.DailyHexagram.coins30"
+        static let coins180  = "com.dj.DailyHexagram.coins180"
+        static let coins800  = "com.dj.DailyHexagram.coins800"
+        static let coins2500 = "com.dj.DailyHexagram.coins2500"
+        static let all = [monthly, yearly, coins30, coins180, coins800, coins2500]
+        static let coinAmounts: [String: Int] = [coins30: 30, coins180: 180, coins800: 800, coins2500: 2500]
     }
 
     @Published private(set) var products: [Product] = []

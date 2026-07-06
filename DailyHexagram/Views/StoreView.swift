@@ -16,8 +16,10 @@ struct StoreView: View {
                         Label {
                             Text(L10n.t("balance", lang))
                         } icon: {
-                            Image(systemName: "circle.circle.fill")
-                                .foregroundStyle(.yellow)
+                            Image("CoinIcon")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 26, height: 26)
                         }
                         Spacer()
                         Text("\(coins.balance)")
@@ -25,14 +27,19 @@ struct StoreView: View {
                             .foregroundStyle(Color.accentColor)
                     }
                     Button {
-                        withAnimation { coins.checkIn() }
+                        withAnimation { coins.checkIn(isPremium: storeKit.isPremium) }
                     } label: {
                         Label(
-                            coins.canCheckInToday ? L10n.t("check_in", lang) : L10n.t("checked_in", lang),
+                            checkInLabel,
                             systemImage: coins.canCheckInToday ? "calendar.badge.plus" : "checkmark.circle.fill"
                         )
                     }
                     .disabled(!coins.canCheckInToday)
+
+                    CheckInCalendarView(checkedDates: coins.checkInDates)
+                        .padding(.vertical, 6)
+                } footer: {
+                    Text(L10n.t("checkin_rule", lang))
                 }
 
                 Section(L10n.t("premium_title", lang)) {
@@ -62,7 +69,7 @@ struct StoreView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(storeKit.coinPacks) { product in
-                            purchaseRow(product)
+                            coinPackRow(product)
                         }
                     }
                 }
@@ -103,15 +110,67 @@ struct StoreView: View {
         .disabled(storeKit.purchaseInFlight)
     }
 
+    private var checkInLabel: String {
+        guard coins.canCheckInToday else { return L10n.t("checked_in", lang) }
+        let reward = storeKit.isPremium ? CoinStore.premiumReward : CoinStore.baseReward
+        return "\(L10n.t("check_in", lang)) +\(reward)"
+    }
+
+    /// Coin pack row: name + savings badge (computed from real unit prices) + price.
+    private func coinPackRow(_ product: Product) -> some View {
+        Button {
+            Task { await storeKit.purchase(product, coins: coins) }
+        } label: {
+            HStack(spacing: 8) {
+                Text(localizedName(product))
+                if let pct = savingsPercent(product), pct > 0 {
+                    badge(String(format: L10n.t("save_pct", lang), pct), color: .red)
+                }
+                if product.id == StoreManager.ProductID.coins2500 {
+                    badge(L10n.t("best_value", lang), color: .orange)
+                }
+                Spacer()
+                Text(product.displayPrice)
+                    .bold()
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+        .disabled(storeKit.purchaseInFlight)
+    }
+
+    private func badge(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(.caption2.bold())
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(color.opacity(0.14)))
+            .foregroundStyle(color)
+    }
+
+    /// Percent saved vs. the smallest pack's per-coin price, from live StoreKit prices.
+    private func savingsPercent(_ product: Product) -> Int? {
+        guard let amount = StoreManager.ProductID.coinAmounts[product.id],
+              let base = storeKit.coinPacks.first,
+              base.id != product.id,
+              let baseAmount = StoreManager.ProductID.coinAmounts[base.id],
+              amount > 0, baseAmount > 0
+        else { return nil }
+        let unit = NSDecimalNumber(decimal: product.price).doubleValue / Double(amount)
+        let baseUnit = NSDecimalNumber(decimal: base.price).doubleValue / Double(baseAmount)
+        guard baseUnit > 0 else { return nil }
+        return Int(((1 - unit / baseUnit) * 100).rounded())
+    }
+
     /// Product names follow the app language instead of StoreKit's bilingual displayName.
     private func localizedName(_ product: Product) -> String {
         let key: String?
         switch product.id {
-        case StoreManager.ProductID.monthly:  key = "prod_monthly"
-        case StoreManager.ProductID.yearly:   key = "prod_yearly"
-        case StoreManager.ProductID.coins60:  key = "prod_coins60"
-        case StoreManager.ProductID.coins200: key = "prod_coins200"
-        case StoreManager.ProductID.coins600: key = "prod_coins600"
+        case StoreManager.ProductID.monthly:   key = "prod_monthly"
+        case StoreManager.ProductID.yearly:    key = "prod_yearly"
+        case StoreManager.ProductID.coins30:   key = "prod_coins30"
+        case StoreManager.ProductID.coins180:  key = "prod_coins180"
+        case StoreManager.ProductID.coins800:  key = "prod_coins800"
+        case StoreManager.ProductID.coins2500: key = "prod_coins2500"
         default: key = nil
         }
         if let key {
