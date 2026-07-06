@@ -116,6 +116,9 @@ struct CastView: View {
             }
         }
         .padding()
+        // Keyboard would otherwise compress the whole layout and push the
+        // question field (top of the page) out of view behind the nav bar.
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
             if values.count < 6 && !isTossing {
                 toss()
