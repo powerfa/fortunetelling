@@ -77,6 +77,17 @@ final class DailyStore: ObservableObject {
         }
     }
 
+    /// The app can stay in memory across midnight; re-derive all "today" state.
+    func refreshForNewDay() {
+        let usedToday = UserDefaults.standard.string(forKey: recastKey) == Self.todayString
+        if recastUsedToday != usedToday {
+            recastUsedToday = usedToday
+        }
+        if let result = todayResult, result.dateString != Self.todayString {
+            load()   // yesterday's result: clear and update the widget
+        }
+    }
+
     /// Clears today's result to allow one paid recast. Coin deduction happens in the caller.
     func startRecast() {
         UserDefaults.standard.set(Self.todayString, forKey: recastKey)

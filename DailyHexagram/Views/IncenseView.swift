@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import UserNotifications
 
-/// 上香：长按香炉点香或一键上香（30福币），三炷心香随真实时间燃烧，
+/// 上香：长按香炉点香或一键上香（10福币），三炷心香随真实时间燃烧，
 /// 青烟袅袅；燃尽时提醒（在后台则本地推送）。
 struct IncenseView: View {
     @EnvironmentObject private var incense: IncenseStore
@@ -97,7 +97,7 @@ struct IncenseView: View {
             .alert(L10n.t("incense_done_title", lang), isPresented: $showDone) {
                 Button(L10n.t("done", lang), role: .cancel) {}
             } message: {
-                Text(lang == "zh" ? doneBlessing.zh : doneBlessing.en)
+                Text(Lang.choose(doneBlessing.zh, doneBlessing.en, lang))
             }
             .task(id: incense.burningStart) {
                 guard incense.isBurning else { return }
@@ -325,12 +325,13 @@ struct IncenseView: View {
 
     private func scheduleNotification() {
         let center = UNUserNotificationCenter.current()
-        let zh = lang == "zh"
+        let lang = self.lang
         center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else { return }
             let content = UNMutableNotificationContent()
-            content.title = zh ? "香已上完" : "The incense has burned out"
-            content.body = zh ? "一炷心香燃尽，愿所求皆如愿。" : "Your incense offering is complete. May your wish be granted."
+            content.title = Lang.choose("香已上完", "The incense has burned out", lang)
+            content.body = Lang.choose("一炷心香燃尽，愿所求皆如愿。",
+                                       "Your incense offering is complete. May your wish be granted.", lang)
             content.sound = .default
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: IncenseStore.duration, repeats: false)
             center.add(UNNotificationRequest(identifier: "incenseDone", content: content, trigger: trigger))

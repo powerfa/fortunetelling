@@ -2,7 +2,12 @@ import SwiftUI
 
 struct RootView: View {
     @AppStorage("appLanguage") private var lang = "zh"
+    @AppStorage("onboardingSeen") private var onboardingSeen = false
     @EnvironmentObject private var incense: IncenseStore
+    @EnvironmentObject private var store: DailyStore
+    @EnvironmentObject private var coins: CoinStore
+    @EnvironmentObject private var storeKit: StoreManager
+    @EnvironmentObject private var blessing: BlessingStore
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -25,17 +30,32 @@ struct RootView: View {
                 }
         }
         .onAppear {
+            // Coins bought via Ask to Buy / interrupted purchases arrive
+            // through Transaction.updates — route them into the wallet.
+            storeKit.externalCoinGrant = { [weak coins] amount in
+                coins?.add(amount)
+            }
             // Resume meditation music if incense is still burning (app relaunch).
             if incense.isBurning {
                 IncenseMusicPlayer.shared.startIfNeeded(remaining: incense.remaining())
             }
         }
         .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            // The app may have crossed midnight while suspended.
+            store.refreshForNewDay()
+            blessing.load()
             // Ambient audio pauses when the app is backgrounded; resume on
             // return if the incense is still burning.
-            if phase == .active, incense.isBurning {
+            if incense.isBurning {
                 IncenseMusicPlayer.shared.startIfNeeded(remaining: incense.remaining())
             }
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { !onboardingSeen },
+            set: { if !$0 { onboardingSeen = true } }
+        )) {
+            OnboardingView()
         }
     }
 }

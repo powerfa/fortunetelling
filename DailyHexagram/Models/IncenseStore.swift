@@ -1,5 +1,11 @@
 import Foundation
 
+/// One completed incense offering (for the history tab).
+struct IncenseRecord: Codable, Identifiable {
+    let id: UUID
+    let date: Date          // completion time
+}
+
 /// 上香: one stick of incense burns in (near) real time, persisting across
 /// app launches. Completion while away is detected on next launch.
 final class IncenseStore: ObservableObject {
@@ -12,14 +18,22 @@ final class IncenseStore: ObservableObject {
 
     @Published private(set) var burningStart: Date?
     @Published private(set) var totalCount: Int
+    /// Completed offerings, newest first (history tab).
+    @Published private(set) var records: [IncenseRecord] = []
     /// The incense finished while the app was closed — surface it once.
     @Published var pendingCompletion = false
 
     private let startKey = "incenseStart"
     private let countKey = "incenseCount"
+    private let recordsKey = "incenseRecords"
+    private let recordsLimit = 500
 
     init() {
         totalCount = UserDefaults.standard.integer(forKey: countKey)
+        if let data = UserDefaults.standard.data(forKey: recordsKey),
+           let list = try? JSONDecoder().decode([IncenseRecord].self, from: data) {
+            records = list
+        }
         let ts = UserDefaults.standard.double(forKey: startKey)
         if ts > 0 {
             let start = Date(timeIntervalSince1970: ts)
@@ -27,10 +41,21 @@ final class IncenseStore: ObservableObject {
                 UserDefaults.standard.removeObject(forKey: startKey)
                 totalCount += 1
                 UserDefaults.standard.set(totalCount, forKey: countKey)
+                appendRecord(at: start.addingTimeInterval(Self.duration))
                 pendingCompletion = true
             } else {
                 burningStart = start
             }
+        }
+    }
+
+    private func appendRecord(at date: Date) {
+        records.insert(IncenseRecord(id: UUID(), date: date), at: 0)
+        if records.count > recordsLimit {
+            records = Array(records.prefix(recordsLimit))
+        }
+        if let data = try? JSONEncoder().encode(records) {
+            UserDefaults.standard.set(data, forKey: recordsKey)
         }
     }
 
@@ -59,5 +84,6 @@ final class IncenseStore: ObservableObject {
         UserDefaults.standard.removeObject(forKey: startKey)
         totalCount += 1
         UserDefaults.standard.set(totalCount, forKey: countKey)
+        appendRecord(at: Date())
     }
 }

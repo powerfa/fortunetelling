@@ -93,11 +93,26 @@ struct HexProvider: TimelineProvider {
 
 // MARK: - Views
 
+/// Simplified→Traditional conversion for the widget (mirrors the app's `Lang`).
+private enum Hant {
+    private static let cache = NSCache<NSString, NSString>()
+    static func convert(_ s: String) -> String {
+        if let hit = cache.object(forKey: s as NSString) { return hit as String }
+        let out = (s as NSString).applyingTransform(StringTransform("Hans-Hant"), reverse: false) ?? s
+        cache.setObject(out as NSString, forKey: s as NSString)
+        return out
+    }
+}
+
 struct HexWidgetView: View {
     let entry: HexEntry
     @Environment(\.widgetFamily) private var family
 
-    private var zh: Bool { entry.lang == "zh" }
+    private var zh: Bool { entry.lang != "en" }
+    /// Chinese display text, converted when the app language is 繁體.
+    private func zhs(_ s: String) -> String {
+        entry.lang == "zht" ? Hant.convert(s) : s
+    }
 
     var body: some View {
         Group {
@@ -127,10 +142,10 @@ struct HexWidgetView: View {
             Image(systemName: "crown.fill")
                 .font(.title3)
                 .foregroundStyle(gold)
-            Text(zh ? "每日一卦" : "Daily Hexagram")
+            Text(zh ? zhs("每日一卦") : "Daily Hexagram")
                 .font(.headline)
                 .foregroundStyle(.white)
-            Text(zh ? "小组件为会员专属\n在 App 中开通" : "Widget is a Premium feature.\nUnlock in the app.")
+            Text(zh ? zhs("小组件为会员专属\n在 App 中开通") : "Widget is a Premium feature.\nUnlock in the app.")
                 .font(.caption2)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white.opacity(0.65))
@@ -142,17 +157,17 @@ struct HexWidgetView: View {
             Text("☰")
                 .font(.title2)
                 .foregroundStyle(gold)
-            Text(zh ? "今日尚未起卦" : "Not cast yet today")
+            Text(zh ? zhs("今日尚未起卦") : "Not cast yet today")
                 .font(.subheadline.bold())
                 .foregroundStyle(.white)
-            Text(zh ? "打开 App 掷币起卦" : "Open the app to cast")
+            Text(zh ? zhs("打开 App 掷币起卦") : "Open the app to cast")
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.65))
         }
     }
 
     private func levelBadge(_ s: HexSnapshot) -> some View {
-        Text(zh ? s.levelZh : s.levelEn)
+        Text(zh ? zhs(s.levelZh) : s.levelEn)
             .font(.caption2.bold())
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
@@ -166,7 +181,7 @@ struct HexWidgetView: View {
                 Text(s.symbol)
                     .font(.system(size: 26))
                     .foregroundStyle(gold)
-                Text(zh ? shortName(s.nameZh) : shortName(s.nameEn))
+                Text(zh ? zhs(shortName(s.nameZh)) : shortName(s.nameEn))
                     .font(.footnote.bold())
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -174,7 +189,7 @@ struct HexWidgetView: View {
             }
             levelBadge(s)
             // 今日解读摘要
-            Text(zh ? s.modernZh : s.modernEn)
+            Text(zh ? zhs(s.modernZh) : s.modernEn)
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.72))
                 .lineLimit(4)
@@ -192,18 +207,18 @@ struct HexWidgetView: View {
                 levelBadge(s)
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text(zh ? s.nameZh : s.nameEn)
+                Text(zh ? zhs(s.nameZh) : s.nameEn)
                     .font(.subheadline.bold())
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                Text(zh ? s.guaciZh : s.guaciEn)
+                Text(zh ? zhs(s.guaciZh) : s.guaciEn)
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.85))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 // 今日解读
-                Text(zh ? s.modernZh : s.modernEn)
+                Text(zh ? zhs(s.modernZh) : s.modernEn)
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.7))
                     .lineLimit(4)
@@ -219,7 +234,7 @@ struct HexWidgetView: View {
                     .font(.system(size: 44))
                     .foregroundStyle(gold)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(zh ? s.nameZh : s.nameEn)
+                    Text(zh ? zhs(s.nameZh) : s.nameEn)
                         .font(.headline)
                         .foregroundStyle(.white)
                         .lineLimit(1)
@@ -229,18 +244,18 @@ struct HexWidgetView: View {
                 Spacer(minLength: 0)
             }
             Divider().overlay(gold.opacity(0.35))
-            Text(zh ? s.guaciZh : s.guaciEn)
+            Text(zh ? zhs(s.guaciZh) : s.guaciEn)
                 .font(.footnote)
                 .foregroundStyle(.white.opacity(0.9))
                 .lineLimit(2)
             if let xiang = zh ? s.xiangZh : (s.xiangEn ?? s.xiangZh), !xiang.isEmpty {
-                Text(zh ? "象曰：\(xiang)" : xiang)
+                Text(zh ? zhs("象曰：\(xiang)") : xiang)
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.65))
                     .lineLimit(2)
             }
             // 今日解读（完整）
-            Text(zh ? s.modernZh : s.modernEn)
+            Text(zh ? zhs(s.modernZh) : s.modernEn)
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.8))
                 .lineLimit(7)

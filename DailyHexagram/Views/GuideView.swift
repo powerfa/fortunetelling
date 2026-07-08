@@ -43,13 +43,13 @@ struct GuideView: View {
         NavigationStack {
             List(topics) { topic in
                 DisclosureGroup {
-                    Text(lang == "zh" ? topic.bodyZh : topic.bodyEn)
+                    Text(Lang.choose(topic.bodyZh, topic.bodyEn, lang))
                         .font(.callout)
                         .lineSpacing(6)
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 4)
                 } label: {
-                    Label(lang == "zh" ? topic.titleZh : topic.titleEn, systemImage: topic.icon)
+                    Label(Lang.choose(topic.titleZh, topic.titleEn, lang), systemImage: topic.icon)
                         .font(.body.weight(.medium))
                 }
             }

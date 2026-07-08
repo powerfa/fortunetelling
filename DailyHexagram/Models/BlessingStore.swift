@@ -12,8 +12,8 @@ struct CharmType: Identifiable {
     let price: Int           // 福币
     let color: Color
 
-    func name(_ lang: String) -> String { lang == "zh" ? nameZh : nameEn }
-    func bless(_ lang: String) -> String { lang == "zh" ? blessZh : blessEn }
+    func name(_ lang: String) -> String { Lang.choose(nameZh, nameEn, lang) }
+    func bless(_ lang: String) -> String { Lang.choose(blessZh, blessEn, lang) }
 
     static let catalog: [CharmType] = [
         CharmType(id: "safety", nameZh: "平安符", nameEn: "Safety Charm",
@@ -55,15 +55,23 @@ final class BlessingStore: ObservableObject {
     static let maxSlots = 6
 
     @Published private(set) var charms: [HungCharm] = []
+    /// Every charm ever hung, newest first (history tab) — wish text included.
+    @Published private(set) var archive: [HungCharm] = []
     /// Transient: the charm that should play the hanging animation.
     @Published var lastHungID: UUID? = nil
     /// 每日首符免费
     @Published private(set) var freeUsedToday: Bool = false
 
     private let storageKey = "blessingTreeCharms"
+    private let archiveKey = "blessingArchive"
     private let freeKey = "blessingFreeDate"
+    private let archiveLimit = 600
 
     init() {
+        if let data = UserDefaults.standard.data(forKey: archiveKey),
+           let list = try? JSONDecoder().decode([HungCharm].self, from: data) {
+            archive = list
+        }
         load()
     }
 
@@ -106,6 +114,13 @@ final class BlessingStore: ObservableObject {
         charms.append(charm)
         lastHungID = charm.id
         persist()
+        archive.insert(charm, at: 0)
+        if archive.count > archiveLimit {
+            archive = Array(archive.prefix(archiveLimit))
+        }
+        if let data = try? JSONEncoder().encode(archive) {
+            UserDefaults.standard.set(data, forKey: archiveKey)
+        }
         return charm
     }
 

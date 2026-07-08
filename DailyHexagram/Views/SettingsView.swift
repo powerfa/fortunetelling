@@ -13,7 +13,8 @@ struct SettingsView: View {
             Form {
                 Section(L10n.t("language", lang)) {
                     Picker(L10n.t("language", lang), selection: $lang) {
-                        Text("中文").tag("zh")
+                        Text("简体").tag("zh")
+                        Text("繁體").tag("zht")
                         Text("English").tag("en")
                     }
                     .pickerStyle(.segmented)
@@ -40,12 +41,19 @@ struct SettingsView: View {
                     }
                 }
 
-                Section(L10n.t("about", lang)) {
+                Section {
                     Text(L10n.t("about_text", lang))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                    Link(L10n.t("terms_of_use", lang), destination: LegalLinks.termsOfUse)
+                    Link(L10n.t("privacy_policy", lang), destination: LegalLinks.privacyPolicy)
+                } header: {
+                    Text(L10n.t("about", lang))
+                } footer: {
+                    Text("\(L10n.t("version", lang)) \(Self.appVersion)")
                 }
 
+                #if DEBUG
                 Section {
                     Button(role: .destructive) {
                         store.resetToday()
@@ -54,8 +62,10 @@ struct SettingsView: View {
                         Text(L10n.t("reset_today", lang))
                     }
                 }
+                #endif
             }
             .navigationTitle(L10n.t("settings", lang))
+            .navigationBarTitleDisplayMode(.inline)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -63,6 +73,14 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+}
+
+extension SettingsView {
+    static var appVersion: String {
+        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "\(v) (\(b))"
     }
 }
 

@@ -19,7 +19,7 @@ struct CheckInCalendarView: View {
     }()
 
     private var calendar: Calendar {
-        lang == "zh" ? Self.zhCalendar : Self.enCalendar
+        Lang.isChinese(lang) ? Self.zhCalendar : Self.enCalendar
     }
 
     private static let keyFormatter: DateFormatter = {
@@ -48,12 +48,12 @@ struct CheckInCalendarView: View {
     }
 
     private var monthTitle: String {
-        (lang == "zh" ? Self.zhMonthFormatter : Self.enMonthFormatter).string(from: displayedMonth)
+        (Lang.isChinese(lang) ? Self.zhMonthFormatter : Self.enMonthFormatter).string(from: displayedMonth)
     }
 
     private var weekdaySymbols: [String] {
-        lang == "zh" ? ["一", "二", "三", "四", "五", "六", "日"]
-                     : ["S", "M", "T", "W", "T", "F", "S"]
+        Lang.isChinese(lang) ? ["一", "二", "三", "四", "五", "六", "日"]
+                             : ["S", "M", "T", "W", "T", "F", "S"]
     }
 
     /// Leading nil-padding + one Date per day of the displayed month.

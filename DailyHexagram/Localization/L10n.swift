@@ -1,5 +1,31 @@
 import Foundation
 
+/// Language routing: "zh" 简体 · "zht" 繁體 · "en" English.
+/// Traditional Chinese is derived from the Simplified source via ICU's
+/// Hans-Hant transliterator (cached), so every string stays in sync.
+enum Lang {
+    static func isChinese(_ lang: String) -> Bool { lang != "en" }
+
+    /// Pick the display string for the language, converting to Traditional if needed.
+    static func choose(_ zh: String, _ en: String, _ lang: String) -> String {
+        lang == "en" ? en : hant(zh, lang)
+    }
+
+    /// Convert a Simplified string when the language is Traditional.
+    static func hant(_ zh: String, _ lang: String) -> String {
+        lang == "zht" ? convert(zh) : zh
+    }
+
+    private static let cache = NSCache<NSString, NSString>()
+
+    static func convert(_ s: String) -> String {
+        if let hit = cache.object(forKey: s as NSString) { return hit as String }
+        let out = (s as NSString).applyingTransform(StringTransform("Hans-Hant"), reverse: false) ?? s
+        cache.setObject(out as NSString, forKey: s as NSString)
+        return out
+    }
+}
+
 /// Simple in-app bilingual string table, driven by @AppStorage("appLanguage").
 enum L10n {
     private static let table: [String: (zh: String, en: String)] = [
@@ -83,7 +109,12 @@ enum L10n {
         // 象传
         "xiang":           ("象曰", "The Image"),
         // History
-        "history_title":   ("占卜历史", "Reading History"),
+        "history_title":   ("历史", "History"),
+        "hist_seg_cast":   ("卦象", "Readings"),
+        "hist_seg_blessing": ("祈福", "Wishes"),
+        "hist_seg_incense": ("上香", "Incense"),
+        "blessing_history_empty": ("还没有祈福记录。去许愿树上挂一枚心愿符吧。", "No wishes yet. Hang a charm on the wish tree."),
+        "incense_history_empty": ("还没有上香记录。焚一炷心香，静心凝神。", "No incense offerings yet. Light one to settle the mind."),
         "history_empty":   ("尚无占卜记录。每日一占，回头验证，是了解易经最好的方式。", "No readings yet. Cast daily and revisit — checking past readings against reality is the best way to learn the I Ching."),
         "history_hint":    ("回顾过往卦象，验证解读与实际的对照。", "Revisit past readings and see how they matched reality."),
         // Share
@@ -105,26 +136,47 @@ enum L10n {
         "best_value":      ("最划算", "Best Value"),
         "debug_premium_on":  ("测试：开启会员", "Debug: Enable Premium"),
         "debug_premium_off": ("测试：关闭会员", "Debug: Disable Premium"),
+        // Store compliance
+        "sub_note":          ("订阅按所选周期自动续费，到期前 24 小时内扣费；可随时在 App Store 账户设置中取消。", "Subscriptions renew automatically for the selected period and are charged within 24 hours before renewal. Cancel anytime in your App Store account settings."),
+        "terms_of_use":      ("使用条款", "Terms of Use"),
+        "privacy_policy":    ("隐私政策", "Privacy Policy"),
+        "purchase_failed_title": ("购买未完成", "Purchase Incomplete"),
+        "purchase_pending_title": ("等待批准", "Pending Approval"),
+        "purchase_pending_msg": ("购买请求已发送，批准后将自动到账。", "Your purchase request was sent and will complete automatically once approved."),
+        "ok":                ("好", "OK"),
+        "version":           ("版本", "Version"),
+        // Onboarding
+        "ob_welcome":        ("欢迎", "Welcome"),
+        "ob_title":          ("每日一卦", "Daily Hexagram"),
+        "ob_intro":          ("以《周易》六十四卦观照每一天", "See each day through the 64 hexagrams of the I Ching"),
+        "ob_cast_title":     ("每日一占", "One Reading a Day"),
+        "ob_cast_body":      ("默念所问之事，掷三枚铜钱六次，自下而上成卦。每天只占一次，静心以待。", "Hold your question in mind and toss three coins six times to build your hexagram. One reading per day."),
+        "ob_sincere_title":  ("三不占", "Three Don'ts"),
+        "ob_sincere_body":   ("不诚不占，不义不占，不疑不占。卦象是参考，决定始终在你。", "No sincerity, no reading; no righteousness, no reading; no true doubt, no reading. The hexagram advises — the decision is yours."),
+        "ob_more_title":     ("祈福与上香", "Blessings & Incense"),
+        "ob_more_body":      ("请符挂愿上许愿树，焚一炷心香静心凝神。福币可通过每日签到获得。", "Hang wishes on the tree and offer incense to settle the mind. Earn coins with daily check-ins."),
+        "ob_note":           ("所有内容仅供参考与自省，不构成专业建议。", "Everything here is for reflection only, not professional advice."),
+        "ob_start":          ("开始", "Begin"),
     ]
 
     static func t(_ key: String, _ lang: String) -> String {
         guard let pair = table[key] else { return key }
-        return lang == "zh" ? pair.zh : pair.en
+        return Lang.choose(pair.zh, pair.en, lang)
     }
 
     /// Description of one coin toss outcome (value 6/7/8/9).
     static func lineName(for value: Int, lang: String) -> String {
         switch value {
-        case 6:  return lang == "zh" ? "三阴面 · 老阴 ✕（变爻）" : "Three tails · Old Yin ✕ (changing)"
-        case 7:  return lang == "zh" ? "一阳两阴 · 少阳 ⚊" : "One head, two tails · Young Yang ⚊"
-        case 8:  return lang == "zh" ? "两阳一阴 · 少阴 ⚋" : "Two heads, one tail · Young Yin ⚋"
-        default: return lang == "zh" ? "三阳面 · 老阳 ○（变爻）" : "Three heads · Old Yang ○ (changing)"
+        case 6:  return Lang.choose("三阴面 · 老阴 ✕（变爻）", "Three tails · Old Yin ✕ (changing)", lang)
+        case 7:  return Lang.choose("一阳两阴 · 少阳 ⚊", "One head, two tails · Young Yang ⚊", lang)
+        case 8:  return Lang.choose("两阳一阴 · 少阴 ⚋", "Two heads, one tail · Young Yin ⚋", lang)
+        default: return Lang.choose("三阳面 · 老阳 ○（变爻）", "Three heads · Old Yang ○ (changing)", lang)
         }
     }
 
     /// Traditional name of a changing line, e.g. 初九 / 六三 / 上六.
     static func changingLineName(index: Int, value: Int, lang: String) -> String {
-        if lang == "zh" {
+        if Lang.isChinese(lang) {
             let pos = ["初", "二", "三", "四", "五", "上"][index]
             let type = value == 9 ? "九" : "六"
             return (index == 0 || index == 5) ? "\(pos)\(type)" : "\(type)\(pos)"
@@ -140,6 +192,12 @@ enum L10n {
         f.dateStyle = .full
         return f
     }()
+    private static let zhtDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "zh_TW")
+        f.dateStyle = .full
+        return f
+    }()
     private static let enDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US")
@@ -148,6 +206,10 @@ enum L10n {
     }()
 
     static func dateText(lang: String) -> String {
-        (lang == "zh" ? zhDateFormatter : enDateFormatter).string(from: Date())
+        switch lang {
+        case "zh":  return zhDateFormatter.string(from: Date())
+        case "zht": return zhtDateFormatter.string(from: Date())
+        default:    return enDateFormatter.string(from: Date())
+        }
     }
 }

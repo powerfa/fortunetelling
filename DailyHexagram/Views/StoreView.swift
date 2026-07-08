@@ -42,7 +42,7 @@ struct StoreView: View {
                     Text(L10n.t("checkin_rule", lang))
                 }
 
-                Section(L10n.t("premium_title", lang)) {
+                Section {
                     if storeKit.isPremium {
                         Label(L10n.t("premium_active", lang), systemImage: "crown.fill")
                             .foregroundStyle(.orange)
@@ -59,6 +59,12 @@ struct StoreView: View {
                                 purchaseRow(product)
                             }
                         }
+                    }
+                } header: {
+                    Text(L10n.t("premium_title", lang))
+                } footer: {
+                    if !storeKit.isPremium {
+                        Text(L10n.t("sub_note", lang))
                     }
                 }
 
@@ -78,6 +84,8 @@ struct StoreView: View {
                     Button(L10n.t("restore", lang)) {
                         Task { await storeKit.restore() }
                     }
+                    Link(L10n.t("terms_of_use", lang), destination: LegalLinks.termsOfUse)
+                    Link(L10n.t("privacy_policy", lang), destination: LegalLinks.privacyPolicy)
                     #if DEBUG
                     Button(L10n.t(storeKit.isPremium ? "debug_premium_off" : "debug_premium_on", lang)) {
                         storeKit.togglePremiumForTesting()
@@ -91,6 +99,22 @@ struct StoreView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.t("done", lang)) { dismiss() }
                 }
+            }
+            .alert(
+                L10n.t("purchase_failed_title", lang),
+                isPresented: Binding(
+                    get: { storeKit.purchaseError != nil },
+                    set: { if !$0 { storeKit.purchaseError = nil } }
+                )
+            ) {
+                Button(L10n.t("ok", lang), role: .cancel) { storeKit.purchaseError = nil }
+            } message: {
+                Text(storeKit.purchaseError ?? "")
+            }
+            .alert(L10n.t("purchase_pending_title", lang), isPresented: $storeKit.purchasePending) {
+                Button(L10n.t("ok", lang), role: .cancel) {}
+            } message: {
+                Text(L10n.t("purchase_pending_msg", lang))
             }
         }
     }

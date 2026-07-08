@@ -34,17 +34,20 @@ struct Hexagram: Codable, Identifiable, Equatable {
     var id: Int { number }
 
     func name(_ lang: String) -> String {
-        lang == "zh" ? "第\(number)卦 · \(fullZh)" : "Hexagram \(number) · \(nameEn) (\(pinyin))"
+        Lang.choose("第\(number)卦 · \(fullZh)", "Hexagram \(number) · \(nameEn) (\(pinyin))", lang)
     }
-    func level(_ lang: String) -> String { lang == "zh" ? levelZh : levelEn }
-    func modern(_ lang: String) -> String { lang == "zh" ? modernZh : modernEn }
+    func level(_ lang: String) -> String { Lang.choose(levelZh, levelEn, lang) }
+    func modern(_ lang: String) -> String { Lang.choose(modernZh, modernEn, lang) }
     func trigrams(_ lang: String) -> String {
-        lang == "zh" ? "\(upperZh)上\(lowerZh)下" : "\(upperEn) over \(lowerEn)"
+        Lang.choose("\(upperZh)上\(lowerZh)下", "\(upperEn) over \(lowerEn)", lang)
     }
-    func career(_ lang: String) -> String { lang == "zh" ? careerZh : careerEn }
-    func love(_ lang: String) -> String { lang == "zh" ? loveZh : loveEn }
-    func wealth(_ lang: String) -> String { lang == "zh" ? wealthZh : wealthEn }
-    func health(_ lang: String) -> String { lang == "zh" ? healthZh : healthEn }
+    func career(_ lang: String) -> String { Lang.choose(careerZh, careerEn, lang) }
+    func love(_ lang: String) -> String { Lang.choose(loveZh, loveEn, lang) }
+    func wealth(_ lang: String) -> String { Lang.choose(wealthZh, wealthEn, lang) }
+    func health(_ lang: String) -> String { Lang.choose(healthZh, healthEn, lang) }
+    /// Classical texts shown in Chinese for all languages; converted for 繁體.
+    func guaci(_ lang: String) -> String { Lang.hant(guaciZh, lang) }
+    func xiang(_ lang: String) -> String { Lang.hant(xiangZh, lang) }
 }
 
 /// Loads and indexes the 64 hexagrams from the bundled JSON resource.

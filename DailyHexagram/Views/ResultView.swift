@@ -42,7 +42,7 @@ struct ResultView: View {
                     .frame(width: 160)
 
                 card(L10n.t("judgment", lang)) {
-                    Text(hex.guaciZh)
+                    Text(hex.guaci(lang))
                         .font(.system(.title3, design: .serif))
                         .lineSpacing(6)
                     if lang == "en" {
@@ -52,7 +52,7 @@ struct ResultView: View {
                             .lineSpacing(4)
                     }
                     Divider()
-                    Text("\(L10n.t("xiang", lang))：\(hex.xiangZh)")
+                    Text("\(L10n.t("xiang", lang))：\(hex.xiang(lang))")
                         .font(.system(.callout, design: .serif))
                         .foregroundStyle(.secondary)
                         .lineSpacing(5)
@@ -127,15 +127,15 @@ struct ResultView: View {
 
     private var shareText: String {
         var lines: [String] = []
-        if lang == "zh" {
-            lines.append("【每日一卦】\(result.dateString)")
-            lines.append("所问：\(result.question ?? L10n.t("default_question", lang))")
+        if Lang.isChinese(lang) {
+            lines.append(Lang.hant("【每日一卦】", lang) + result.dateString)
+            lines.append("\(Lang.hant("所问：", lang))\(result.question ?? L10n.t("default_question", lang))")
             lines.append("\(hex.symbol) \(hex.name(lang)) · \(hex.level(lang))")
-            lines.append("卦辞：\(hex.guaciZh)")
-            lines.append("象曰：\(hex.xiangZh)")
+            lines.append("\(Lang.hant("卦辞：", lang))\(hex.guaci(lang))")
+            lines.append("\(Lang.hant("象曰：", lang))\(hex.xiang(lang))")
             lines.append(hex.modern(lang))
             if let t = result.transformed {
-                lines.append("变卦：\(t.symbol) \(t.name(lang))")
+                lines.append("\(Lang.hant("变卦：", lang))\(t.symbol) \(t.name(lang))")
             }
         } else {
             lines.append("[Daily Hexagram] \(result.dateString)")
@@ -245,9 +245,9 @@ struct ResultView: View {
         let items = result.changingIndexes.map {
             L10n.changingLineName(index: $0, value: result.values[$0], lang: lang)
         }
-        let joined = items.joined(separator: lang == "zh" ? "、" : ", ")
-        return lang == "zh"
-            ? "变爻：\(joined)。爻动则势变，今日之势正在转化，参看变卦。"
+        let joined = items.joined(separator: Lang.isChinese(lang) ? "、" : ", ")
+        return Lang.isChinese(lang)
+            ? Lang.hant("变爻：\(joined)。爻动则势变，今日之势正在转化，参看变卦。", lang)
             : "Changing: \(joined). The situation is in motion — see the transformed hexagram below."
     }
 
@@ -263,7 +263,7 @@ struct ResultView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(t.name(lang))
                         .font(.body.bold())
-                    Text(t.guaciZh)
+                    Text(t.guaci(lang))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .lineLimit(3)
