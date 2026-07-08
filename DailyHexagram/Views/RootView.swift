@@ -2,21 +2,40 @@ import SwiftUI
 
 struct RootView: View {
     @AppStorage("appLanguage") private var lang = "zh"
+    @EnvironmentObject private var incense: IncenseStore
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView {
             TodayTab()
                 .tabItem {
-                    Label(L10n.t("tab_today", lang), systemImage: "sun.max.fill")
+                    Label(L10n.t("tab_today", lang), systemImage: "circle.grid.cross.fill")
+                }
+            BlessingView()
+                .tabItem {
+                    Label(L10n.t("tab_blessing", lang), systemImage: "sparkles")
+                }
+            IncenseView()
+                .tabItem {
+                    Label(L10n.t("tab_incense", lang), systemImage: "flame.fill")
                 }
             HistoryView()
                 .tabItem {
                     Label(L10n.t("tab_history", lang), systemImage: "clock.arrow.circlepath")
                 }
-            GuideView()
-                .tabItem {
-                    Label(L10n.t("tab_guide", lang), systemImage: "book.closed.fill")
-                }
+        }
+        .onAppear {
+            // Resume meditation music if incense is still burning (app relaunch).
+            if incense.isBurning {
+                IncenseMusicPlayer.shared.startIfNeeded(remaining: incense.remaining())
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Ambient audio pauses when the app is backgrounded; resume on
+            // return if the incense is still burning.
+            if phase == .active, incense.isBurning {
+                IncenseMusicPlayer.shared.startIfNeeded(remaining: incense.remaining())
+            }
         }
     }
 }
@@ -27,6 +46,7 @@ struct TodayTab: View {
     @AppStorage("appLanguage") private var lang = "zh"
     @State private var showSettings = false
     @State private var showStore = false
+    @State private var showGuide = false
 
     var body: some View {
         NavigationStack {
@@ -57,6 +77,13 @@ struct TodayTab: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        showGuide = true
+                    } label: {
+                        Image(systemName: "book.closed")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
                         showSettings = true
                     } label: {
                         Image(systemName: "gearshape")
@@ -69,6 +96,9 @@ struct TodayTab: View {
             .sheet(isPresented: $showStore) {
                 StoreView()
             }
+            .sheet(isPresented: $showGuide) {
+                GuideView()
+            }
         }
     }
 }
@@ -78,4 +108,5 @@ struct TodayTab: View {
         .environmentObject(DailyStore())
         .environmentObject(CoinStore())
         .environmentObject(StoreManager())
+        .environmentObject(IncenseStore())
 }

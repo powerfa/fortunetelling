@@ -2,8 +2,10 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var store: DailyStore
+    @EnvironmentObject private var incense: IncenseStore
     @AppStorage("appLanguage") private var lang = "zh"
     @AppStorage("soundEnabled") private var soundEnabled = true
+    @AppStorage("incenseMusicEnabled") private var incenseMusicEnabled = true
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -23,6 +25,18 @@ struct SettingsView: View {
                 Section {
                     Toggle(isOn: $soundEnabled) {
                         Label(L10n.t("sound", lang), systemImage: "speaker.wave.2.fill")
+                    }
+                    Toggle(isOn: $incenseMusicEnabled) {
+                        Label(L10n.t("incense_music", lang), systemImage: "music.note")
+                    }
+                    .onChange(of: incenseMusicEnabled) { _, on in
+                        if on {
+                            if incense.isBurning {
+                                IncenseMusicPlayer.shared.startIfNeeded(remaining: incense.remaining())
+                            }
+                        } else {
+                            IncenseMusicPlayer.shared.stop(fade: 0.8)
+                        }
                     }
                 }
 
@@ -53,5 +67,7 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView().environmentObject(DailyStore())
+    SettingsView()
+        .environmentObject(DailyStore())
+        .environmentObject(IncenseStore())
 }

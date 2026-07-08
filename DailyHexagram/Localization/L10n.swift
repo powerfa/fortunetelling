@@ -51,9 +51,31 @@ enum L10n {
         "coin_packs":      ("福币充值", "Coin Packs"),
         "store_unavailable": ("商店暂不可用：请在 Xcode Scheme 中启用 StoreKit 配置，或上架 App Store Connect 后生效。", "Store unavailable: enable the StoreKit configuration in your Xcode scheme, or configure products in App Store Connect."),
         // Tabs
-        "tab_today":       ("今日", "Today"),
+        "tab_today":       ("算卦", "Divine"),
+        "tab_blessing":    ("祈福", "Blessing"),
         "tab_history":     ("历史", "History"),
         "tab_guide":       ("知识", "Learn"),
+        // Incense (上香)
+        "tab_incense":     ("上香", "Incense"),
+        "incense_subtitle": ("焚香一炷，心诚则灵", "One stick of incense, offered with a sincere heart"),
+        "incense_hint":    ("长按香炉点香，或一键上香", "Long-press the censer to light, or use the button"),
+        "incense_button":  ("一键上香 · 10 福币", "Light Incense · 10 coins"),
+        "incense_confirm_title": ("上香祈愿", "Offer Incense"),
+        "incense_confirm_msg": ("心中默念所求之事。一炷心香将燃烧真实时长，燃尽时提醒您。消耗 10 福币。", "Hold your prayer silently in mind. The incense burns in real time; you'll be notified when it finishes. Costs 10 coins."),
+        "light_action":    ("点香", "Light"),
+        "incense_burning": ("一炷心香 · 剩余 %@", "Incense burning · %@ left"),
+        "incense_done_title": ("香已上完", "The incense has burned out"),
+        "incense_count":   ("已上香 %d 次", "Offered %d times"),
+        // Blessing tree (祈福)
+        "blessing_subtitle": ("许愿树每日焕新，今日心愿今日挂", "The wish tree renews daily — today's wishes hang today"),
+        "charm_shop":      ("请符", "Charms"),
+        "free_today_badge": ("今日首符免费", "First charm free today"),
+        "free_label":      ("免费", "Free"),
+        "write_wish":      ("写下心愿", "Write Your Wish"),
+        "wish_placeholder": ("写下你的心愿…", "Write your wish…"),
+        "hang_on_tree":    ("挂上许愿树", "Hang on the Tree"),
+        "tree_full":       ("今日树上已挂满，明日再来", "The tree is full for today — come back tomorrow"),
+        "blessed_note":    ("符者，心之所寄。仅供祈愿娱乐。", "A charm carries the heart's intent. For reflection and fun only."),
         // Question (所问之事)
         "question_placeholder": ("所问何事？（可留空）", "Your question (optional)"),
         "question_label":  ("所问", "Question"),
@@ -70,6 +92,7 @@ enum L10n {
         "guide_title":     ("易经知识", "About the I Ching"),
         // Sound & shake
         "sound":           ("音效", "Sound Effects"),
+        "incense_music":   ("焚香音乐", "Incense Music"),
         "shake_hint":      ("也可以摇一摇手机掷币", "…or shake your phone to toss"),
         // Product names (shown instead of StoreKit displayName, so they follow the app language)
         "prod_monthly":    ("月度会员", "Premium Monthly"),
