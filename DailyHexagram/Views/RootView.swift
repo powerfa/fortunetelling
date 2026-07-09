@@ -8,6 +8,7 @@ struct RootView: View {
     @EnvironmentObject private var coins: CoinStore
     @EnvironmentObject private var storeKit: StoreManager
     @EnvironmentObject private var blessing: BlessingStore
+    @EnvironmentObject private var invite: InviteManager
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -39,6 +40,8 @@ struct RootView: View {
             if incense.isBurning {
                 IncenseMusicPlayer.shared.startIfNeeded(remaining: incense.remaining())
             }
+            // Credit any invite rewards that arrived while we were away.
+            Task { await invite.collectRewards(coins: coins) }
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
@@ -57,6 +60,20 @@ struct RootView: View {
         )) {
             OnboardingView()
         }
+        .alert(
+            inviteRewardText,
+            isPresented: Binding(
+                get: { invite.message?.key == "invite_reward_arrived" },
+                set: { if !$0 { invite.message = nil } }
+            )
+        ) {
+            Button(L10n.t("ok", lang), role: .cancel) { invite.message = nil }
+        }
+    }
+
+    private var inviteRewardText: String {
+        guard let m = invite.message, m.key == "invite_reward_arrived" else { return "" }
+        return String(format: L10n.t(m.key, lang), m.amount)
     }
 }
 

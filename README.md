@@ -62,15 +62,48 @@ DailyHexagram/
 
 "重置今日卦象"测试按钮与"测试开关会员"仅在 DEBUG 构建可见，Release/上架版本自动隐藏。
 
+## 邀请好友（CloudKit，无自建后端）
+
+商店页 → 邀请好友：好友输码后双方各得 20 福币，邀请人上限 10 人。基于 CloudKit 公共数据库：
+`InviteCode`（recordName=`invite-<码>`）与 `Redemption`（recordName=`redeem-<兑换者用户ID>`，
+天然保证一个 iCloud 账号终身只兑换一次，重装无效；自邀被 ownerUserID 校验拦截）。
+
+- 需登录 iCloud；模拟器测试 CloudKit 不稳定，请用真机 + 两个 iCloud 账号测完整流程
+- 首次运行后到 [CloudKit Dashboard](https://icloud.developer.apple.com) → 该容器 → Schema：
+  给 `Redemption` 的 `inviterUserID`、`inviterCredited` 添加 **Queryable** 索引（领奖查询需要）
+- **上架前必须**在 Dashboard 把 Development schema **Deploy to Production**，否则线上全部报错
+
+### 礼品码（与邀请码共用兑换入口）
+
+在 CloudKit Dashboard 手工创建 `GiftCode` 记录即可发码（营销、补偿、KOL 等场景）：
+
+1. Schema → Record Types 新建 `GiftCode` 类型，字段：`amount`(Int64 面额福币) ·
+   `maxRedemptions`(Int64 总次数上限，0=不限) · `redeemedCount`(Int64 建0) ·
+   `active`(Int64 1=启用 0=停用) · `expiresAt`(Date 可选)
+2. Data → Records → Public Database 新建 `GiftCode` 记录：**Record Name 填 `gift-<码>`**
+   （如 `gift-XINNIAN88`，用户输入 `XINNIAN88`，码必须全大写），其余字段按需填
+- 每个用户每个礼品码只能兑换一次（`GiftRedemption` 记录唯一性保证），可兑换多个不同码
+- 注意：`GiftCode`/`GiftRedemption` 两个记录类型需在 Development 环境先各建一条测试记录跑通，
+  再随 schema 一起部署到 Production，线上创建的礼品码记录要建在 **Production** 环境
+
 ## 上架清单（App Store 提交前）
 
 1. **隐私政策**：项目根目录的 `privacy.html` 需发布为公开网页（如 GitHub Pages），并保证与
    `StoreManager.swift` 里 `LegalLinks.privacyPolicy` 的 URL 一致（App Store Connect 也要填同一 URL）
-2. **App 隐私问卷**：选择"不收集数据"（本应用无任何数据收集/追踪 SDK）
-3. **订阅产品**：App Store Connect 创建上述产品 ID，订阅组内含月度/年度两档
-4. **购买页合规**：已内置恢复购买、自动续费说明、使用条款（Apple 标准 EULA）与隐私政策链接
-5. **审核备注**：建议注明"占卜内容仅供娱乐（4.3/5.6 相关）；App 内已多处标注 for entertainment only"
-6. **开发者署名**：如不想显示个人姓名，需以组织（公司）身份注册开发者账号
+2. **App 隐私问卷**：邀请功能在 CloudKit 存了用户ID与邀请关系 → 申报"标识符（用户ID）· 与用户关联 · 仅用于App功能"；无第三方SDK、无追踪，其余选"不收集"
+3. **CloudKit**：Dashboard 索引 + schema 部署到 Production（见上节）
+4. **订阅产品**：App Store Connect 创建上述产品 ID，订阅组内含月度/年度两档
+5. **邀请分享链接**：在 App Store Connect 创建 App 记录后（无需等上线），到 App 信息页复制数字
+   Apple ID，填入 `InviteManager.swift` 顶部的 `appStoreURLString`
+   （格式 `https://apps.apple.com/app/id<数字>`），并重新打包——否则邀请分享文案不带下载链接
+6. **购买页合规**：已内置恢复购买、自动续费说明、使用条款（Apple 标准 EULA）与隐私政策链接
+7. **付费协议**：App Store Connect → 协议、税务和银行业务，签署 Paid Apps 协议并填银行/税务信息——不签内购产品无法生效
+8. **出口合规**：提交时"加密"问题选"仅使用豁免的标准加密"（App 只用 HTTPS/系统加密）
+9. **商店素材**：App 名称/副标题/描述/关键词（三语可分区本地化）、6.7" 与 6.5" 截图、年龄分级问卷（占卜类正常可 4+）
+10. **订阅信息**：订阅组内两档产品需填显示名与描述；建议同时配置订阅推广图
+11. **TestFlight 回归**：真机过一遍核心流程——起卦/重算/签到/买币/订阅/祈福/上香(30分钟版)/邀请双机流程/三语切换/Widget
+12. **审核备注**：建议注明"占卜内容仅供娱乐（4.3/5.6 相关）；App 内已多处标注 for entertainment only"
+13. **开发者署名**：如不想显示个人姓名，需以组织（公司）身份注册开发者账号
 
 ---
 

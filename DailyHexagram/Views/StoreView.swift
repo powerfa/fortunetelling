@@ -7,6 +7,7 @@ struct StoreView: View {
     @EnvironmentObject private var storeKit: StoreManager
     @AppStorage("appLanguage") private var lang = "zh"
     @Environment(\.dismiss) private var dismiss
+    @State private var showInvite = false
 
     var body: some View {
         NavigationStack {
@@ -68,6 +69,22 @@ struct StoreView: View {
                     }
                 }
 
+                Section {
+                    Button {
+                        showInvite = true
+                    } label: {
+                        HStack {
+                            Label(String(format: L10n.t("invite_row", lang), InviteManager.reward),
+                                  systemImage: "person.2.fill")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .tint(.primary)
+                }
+
                 Section(L10n.t("coin_packs", lang)) {
                     if storeKit.coinPacks.isEmpty {
                         Text(L10n.t("store_unavailable", lang))
@@ -110,6 +127,9 @@ struct StoreView: View {
                 Button(L10n.t("ok", lang), role: .cancel) { storeKit.purchaseError = nil }
             } message: {
                 Text(storeKit.purchaseError ?? "")
+            }
+            .sheet(isPresented: $showInvite) {
+                InviteView()
             }
             .alert(L10n.t("purchase_pending_title", lang), isPresented: $storeKit.purchasePending) {
                 Button(L10n.t("ok", lang), role: .cancel) {}

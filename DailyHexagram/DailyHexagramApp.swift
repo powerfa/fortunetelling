@@ -7,6 +7,7 @@ struct DailyHexagramApp: App {
     @StateObject private var storeKit = StoreManager()
     @StateObject private var blessing = BlessingStore()
     @StateObject private var incense = IncenseStore()
+    @StateObject private var invite = InviteManager()
 
     init() {
         // Warm the 64-hexagram store (~320 KB JSON decode) off the main thread
@@ -24,6 +25,7 @@ struct DailyHexagramApp: App {
                 .environmentObject(storeKit)
                 .environmentObject(blessing)
                 .environmentObject(incense)
+                .environmentObject(invite)
         }
     }
 }
