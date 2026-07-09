@@ -70,7 +70,10 @@ DailyHexagram/
 
 - 需登录 iCloud；模拟器测试 CloudKit 不稳定，请用真机 + 两个 iCloud 账号测完整流程
 - 首次运行后到 [CloudKit Dashboard](https://icloud.developer.apple.com) → 该容器 → Schema：
-  给 `Redemption` 的 `inviterUserID`、`inviterCredited` 添加 **Queryable** 索引（领奖查询需要）
+  给 `Redemption` 的 `inviterUserID` 添加 **Queryable** 索引（领奖查询需要）
+- 记录类型共五个：`InviteCode` / `Redemption` / `RewardClaim`（邀请人领奖凭证，字段
+  `redemption` String，公共库记录仅创建者可写，故领奖不改他人记录而是建自己的凭证）/
+  `GiftCode` / `GiftRedemption`
 - **上架前必须**在 Dashboard 把 Development schema **Deploy to Production**，否则线上全部报错
 
 ### 礼品码（与邀请码共用兑换入口）

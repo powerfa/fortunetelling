@@ -161,6 +161,8 @@ enum L10n {
         "invite_error":        ("网络或 iCloud 暂时不可用，请稍后再试", "Network or iCloud temporarily unavailable — try again later"),
         "invite_need_icloud":  ("请先在系统设置中登录 iCloud", "Please sign in to iCloud in Settings first"),
         "invite_reward_arrived": ("你邀请的好友已加入，福币 +%d！", "Your invited friends joined — +%d coins!"),
+        "invite_refresh":      ("刷新邀请奖励", "Refresh Invite Rewards"),
+        "invite_no_new":       ("暂无待领取的邀请奖励", "No new invite rewards"),
         // Store compliance
         "sub_note":          ("订阅按所选周期自动续费，到期前 24 小时内扣费；可随时在 App Store 账户设置中取消。", "Subscriptions renew automatically for the selected period and are charged within 24 hours before renewal. Cancel anytime in your App Store account settings."),
         "terms_of_use":      ("使用条款", "Terms of Use"),

@@ -7,11 +7,11 @@ import CloudKit
 /// - `InviteCode`  recordName = "invite-<码>"，字段 ownerUserID。
 ///   recordName 的唯一性天然防撞码。
 /// - `Redemption`  recordName = "redeem-<兑换者用户ID>"，字段 code /
-///   inviterUserID / inviterCredited(0|1)。recordName 唯一性保证
+///   inviterUserID / credited(0|1)。recordName 唯一性保证
 ///   一个 iCloud 账号终身只能兑换一次，重装 App 也无法重复。
 ///
 /// 上架前需在 CloudKit Dashboard：给 Redemption 的 inviterUserID、
-/// inviterCredited 建 Queryable 索引，并把 schema 部署到 Production。
+/// credited 建 Queryable 索引，并把 schema 部署到 Production。
 @MainActor
 final class InviteManager: ObservableObject {
     static let reward = 20          // 双方各得
@@ -41,6 +41,7 @@ final class InviteManager: ObservableObject {
     private let codeKey = "inviteMyCode"
     private let redeemedKey = "inviteRedeemed"
     private let creditedKey = "inviteCreditedCount"
+    private let claimedListKey = "inviteClaimedRedemptions"
 
     private let container = CKContainer(identifier: "iCloud.com.dj.DailyHexagram")
     private var db: CKDatabase { container.publicCloudDatabase }
@@ -125,7 +126,7 @@ final class InviteManager: ObservableObject {
                                       recordID: CKRecord.ID(recordName: "redeem-\(me)"))
             redemption["code"] = code
             redemption["inviterUserID"] = owner
-            redemption["inviterCredited"] = 0
+            redemption["credited"] = 0
             do {
                 _ = try await db.save(redemption)
             } catch let error as CKError where error.code == .serverRecordChanged {
@@ -200,37 +201,56 @@ final class InviteManager: ObservableObject {
     // MARK: - Collecting inviter rewards
 
     /// Query uncredited redemptions of my code and credit them (capped).
-    /// Safe to call on every launch; silent on any failure.
-    func collectRewards(coins: CoinStore) async {
+    /// Silent on launch; `verbose` (manual refresh) reports every outcome.
+    func collectRewards(coins: CoinStore, verbose: Bool = false) async {
         await refreshAvailability()
-        guard iCloudAvailable, creditedCount < Self.maxInvites else { return }
+        guard iCloudAvailable, creditedCount < Self.maxInvites else {
+            if verbose { message = ("invite_no_new", 0) }
+            return
+        }
         do {
             let me = try await container.userRecordID().recordName
-            let predicate = NSPredicate(format: "inviterUserID == %@ AND inviterCredited == 0", me)
+            // Public-DB records are writable only by their creator, so the
+            // inviter cannot mark B's Redemption as credited. Instead the
+            // inviter creates their own RewardClaim record whose recordName
+            // is derived from the redemption — its uniqueness guarantees each
+            // redemption pays out exactly once (across all my devices too).
+            let predicate = NSPredicate(format: "inviterUserID == %@", me)
             let query = CKQuery(recordType: "Redemption", predicate: predicate)
             let (results, _) = try await db.records(matching: query, resultsLimit: Self.maxInvites)
+            var claimed = Set(UserDefaults.standard.stringArray(forKey: claimedListKey) ?? [])
             var gained = 0
-            for (_, result) in results {
-                guard creditedCount < Self.maxInvites, let record = try? result.get() else { continue }
-                record["inviterCredited"] = 1
+            for (recordID, result) in results {
+                guard creditedCount < Self.maxInvites, (try? result.get()) != nil else { continue }
+                let name = recordID.recordName
+                if claimed.contains(name) { continue }   // already paid on this device
+                let claim = CKRecord(recordType: "RewardClaim",
+                                     recordID: CKRecord.ID(recordName: "claim-\(name)"))
+                claim["redemption"] = name
                 do {
-                    // Default save policy compares change tags — if another of
-                    // my devices credited this record first, this save fails
-                    // and we skip it (no double payout).
-                    _ = try await db.save(record)
+                    _ = try await db.save(claim)
                     coins.add(Self.reward)
                     creditedCount += 1
                     gained += Self.reward
                     UserDefaults.standard.set(creditedCount, forKey: creditedKey)
+                } catch let error as CKError where error.code == .serverRecordChanged {
+                    // Claimed already (typically by another device of mine).
                 } catch {
-                    continue
+                    continue   // transient failure: retry on a later pass
                 }
+                claimed.insert(name)
+                UserDefaults.standard.set(Array(claimed), forKey: claimedListKey)
             }
             if gained > 0 {
                 message = ("invite_reward_arrived", gained)
+            } else if verbose {
+                message = ("invite_no_new", 0)
             }
         } catch {
-            // Missing index / network issues: silently retry next launch.
+            if verbose {
+                message = ("invite_error", 0)
+            }
+            // Otherwise silent: retried on next launch.
         }
     }
 }

@@ -67,6 +67,13 @@ struct InviteView: View {
                                     invite.creditedCount * InviteManager.reward))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                        Button {
+                            Task { await invite.collectRewards(coins: coins, verbose: true) }
+                        } label: {
+                            Label(L10n.t("invite_refresh", lang), systemImage: "arrow.clockwise")
+                                .font(.callout)
+                        }
+                        .disabled(invite.busy)
                     }
 
                     Section {
@@ -110,6 +117,7 @@ struct InviteView: View {
                 await invite.refreshAvailability()
                 if invite.iCloudAvailable {
                     await invite.ensureCode()
+                    await invite.collectRewards(coins: coins)
                 }
             }
             .alert(
