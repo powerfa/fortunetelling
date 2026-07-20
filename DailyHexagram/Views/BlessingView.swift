@@ -364,7 +364,6 @@ struct WishComposeView: View {
                     .padding(.vertical, 8)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(wish.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .padding(.horizontal)
                 .padding(.bottom, 10)
             }

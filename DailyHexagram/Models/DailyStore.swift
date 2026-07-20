@@ -9,10 +9,12 @@ import SwiftUI
 /// last-writer-wins so a recast (which clears it) propagates correctly.
 final class DailyStore: ObservableObject {
     @Published private(set) var todayResult: DivinationResult?
+    @Published private(set) var recastUsedToday = false
     @Published private(set) var history: [DivinationResult] = []
 
     private let storageKey = "dailyDivinationResult"
     private let historyKey = "divinationHistory"
+    private let recastKey = "recastUsedDate"
     private let syncMarkerKey = "dailySyncedOnce"
     private let historyLimit = 366
 
@@ -70,6 +72,7 @@ final class DailyStore: ObservableObject {
 
     /// The app can stay in memory across midnight; re-derive "today" state.
     func refreshForNewDay() {
+        refreshRecastFlag()
         if let result = todayResult, result.dateString != Self.todayString {
             todayResult = nil
             persist()
@@ -77,18 +80,31 @@ final class DailyStore: ObservableObject {
         }
     }
 
-    /// Clears today's result for a paid recast (unlimited; 10 coins each).
+    /// Clears today's result for the once-per-day paid recast.
     /// Coin deduction happens in the caller.
     func startRecast() {
+        recastUsedToday = true
+        UserDefaults.standard.set(Self.todayString, forKey: recastKey)
+        kv.set(Self.todayString, forKey: recastKey)
         todayResult = nil
         persist()
         WidgetBridge.update(result: nil)
     }
 
     func resetToday() {
+        recastUsedToday = false
+        UserDefaults.standard.removeObject(forKey: recastKey)
+        kv.removeObject(forKey: recastKey)
         todayResult = nil
         persist()
         WidgetBridge.update(result: nil)
+    }
+
+    /// Used today if ANY of the user's devices recast today (synced via iCloud).
+    private func refreshRecastFlag() {
+        let today = Self.todayString
+        recastUsedToday = UserDefaults.standard.string(forKey: recastKey) == today
+            || kv.string(forKey: recastKey) == today
     }
 
     // MARK: - Sync plumbing
@@ -111,6 +127,7 @@ final class DailyStore: ObservableObject {
     /// on the very first sync the local value is preserved and pushed up.
     private func mergeAndLoad(cloudAuthoritativeForToday: Bool) {
         let defaults = UserDefaults.standard
+        refreshRecastFlag()
         // --- history: union by date, newest epoch wins ---
         var byDate: [String: DivinationResult] = [:]
         for r in Self.decodeList(defaults.data(forKey: historyKey))
