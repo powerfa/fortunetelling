@@ -27,18 +27,21 @@ struct StoreView: View {
                             .font(.title3.bold())
                             .foregroundStyle(Color.accentColor)
                     }
-                    Button {
-                        withAnimation { coins.checkIn(isPremium: storeKit.isPremium) }
-                    } label: {
-                        Label(
-                            checkInLabel,
-                            systemImage: coins.canCheckInToday ? "calendar.badge.plus" : "checkmark.circle.fill"
-                        )
-                    }
-                    .disabled(!coins.canCheckInToday)
+                    Label(
+                        checkInLabel,
+                        systemImage: coins.canCheckInToday ? "hand.tap.fill" : "checkmark.circle.fill"
+                    )
+                    .font(.callout)
+                    .foregroundStyle(coins.canCheckInToday ? Color.accentColor : .secondary)
 
-                    CheckInCalendarView(checkedDates: coins.checkInDates)
-                        .padding(.vertical, 6)
+                    CheckInCalendarView(
+                        checkedDates: coins.checkInDates,
+                        canCheckInToday: coins.canCheckInToday,
+                        onCheckInToday: {
+                            coins.checkIn(isPremium: storeKit.isPremium)
+                        }
+                    )
+                    .padding(.vertical, 6)
                 } footer: {
                     Text(L10n.t("checkin_rule", lang))
                 }
@@ -157,7 +160,7 @@ struct StoreView: View {
     private var checkInLabel: String {
         guard coins.canCheckInToday else { return L10n.t("checked_in", lang) }
         let reward = storeKit.isPremium ? CoinStore.premiumReward : CoinStore.baseReward
-        return "\(L10n.t("check_in", lang)) +\(reward)"
+        return String(format: L10n.t("tap_date_checkin", lang), reward)
     }
 
     /// Coin pack row: name + savings badge (computed from real unit prices) + price.

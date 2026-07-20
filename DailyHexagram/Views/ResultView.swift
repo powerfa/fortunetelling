@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ResultView: View {
     let result: DivinationResult
@@ -9,6 +10,7 @@ struct ResultView: View {
     @AppStorage("appLanguage") private var lang = "zh"
     @State private var showStore = false
     @State private var showRecastAlert = false
+    @State private var shareCard: Image? = nil
 
     private var hex: Hexagram { result.primary }
 
@@ -75,6 +77,17 @@ struct ResultView: View {
                         Text(changingText)
                             .font(.body)
                             .lineSpacing(5)
+                        // 爻辞：每一动爻的原文与解读（占断精髓所在）
+                        ForEach(result.changingIndexes, id: \.self) { idx in
+                            if let yao = YaociStore.shared.line(hexagram: hex.number, index: idx) {
+                                yaoRow(yao)
+                            }
+                        }
+                        // 乾之用九、坤之用六：六爻皆动时的特例读法
+                        if result.changingIndexes.count == 6,
+                           let extra = YaociStore.shared.extra(hexagram: hex.number) {
+                            yaoRow(extra)
+                        }
                         if let t = result.transformed {
                             Divider()
                             transformedView(t)
@@ -87,9 +100,14 @@ struct ResultView: View {
                 if !isHistory {
                     recastSection
 
-                    ShareLink(item: shareText) {
-                        Label(L10n.t("share", lang), systemImage: "square.and.arrow.up")
-                            .font(.callout)
+                    if let shareCard {
+                        // 图卡 + 文本一起分享：微信等只收图，备忘录等可收文字
+                        ShareLink(item: shareCard,
+                                  message: Text(shareText),
+                                  preview: SharePreview(hex.name(lang), image: shareCard)) {
+                            Label(L10n.t("share", lang), systemImage: "square.and.arrow.up")
+                                .font(.callout)
+                        }
                     }
                 }
 
@@ -111,6 +129,9 @@ struct ResultView: View {
         .sheet(isPresented: $showStore) {
             StoreView()
         }
+        .task(id: "\(result.dateString)-\(lang)") {
+            renderShareCard()
+        }
         .alert(L10n.t("recast_confirm_title", lang), isPresented: $showRecastAlert) {
             Button(L10n.t("confirm", lang), role: .destructive) {
                 if coins.spend(CoinStore.recastCost) {
@@ -124,6 +145,16 @@ struct ResultView: View {
     }
 
     // MARK: - Share
+
+    /// Renders the 古风 share card at 3x for crisp WeChat/social output.
+    @MainActor
+    private func renderShareCard() {
+        let renderer = ImageRenderer(content: ShareCardView(result: result, lang: lang))
+        renderer.scale = 3
+        if let ui = renderer.uiImage {
+            shareCard = Image(uiImage: ui)
+        }
+    }
 
     private var shareText: String {
         var lines: [String] = []
@@ -227,6 +258,22 @@ struct ResultView: View {
                 }
             }
         }
+    }
+
+    /// One changing-line statement: original 爻辞 + reading in the app language.
+    private func yaoRow(_ yao: YaoLine) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(yao.original(lang))
+                .font(.system(.callout, design: .serif))
+                .lineSpacing(4)
+            Text(yao.meaning(lang))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineSpacing(3)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var levelBadge: some View {

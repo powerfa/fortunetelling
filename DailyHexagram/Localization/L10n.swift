@@ -70,6 +70,7 @@ enum L10n {
         "balance":         ("当前福币", "Coin Balance"),
         "check_in":        ("每日签到", "Daily Check-in"),
         "checked_in":      ("今日已签到", "Checked in today"),
+        "tap_date_checkin": ("点日历上的今日日期签到 +%d 福币", "Tap today's date on the calendar to check in +%d"),
         "checkin_rule":    ("签到奖励：每日 +1 福币，会员 +2。红圈为已签到日。", "Check-in reward: +1 coin daily, +2 with Premium. Red circles mark checked-in days."),
         "premium_title":   ("会员", "Premium"),
         "premium_benefits": ("· 事业、爱情、财运、健康四维深度详批\n· 桌面小组件：每日卦象一览\n· 每日签到双倍福币", "· In-depth readings: career, love, wealth & health\n· Home Screen widget: today's hexagram at a glance\n· Double daily check-in coins"),
@@ -124,6 +125,9 @@ enum L10n {
         "guide_title":     ("易经知识", "About the I Ching"),
         // Sound & shake
         "sound":           ("音效", "Sound Effects"),
+        "daily_reminder":  ("每日提醒", "Daily Reminder"),
+        "reminder_time":   ("提醒时间", "Time"),
+        "daily_reminder_note": ("在你选定的时间提醒起今日一卦。", "A gentle nudge to cast your daily hexagram at the time you choose."),
         "incense_music":   ("焚香音乐", "Incense Music"),
         "shake_hint":      ("也可以摇一摇手机掷币", "…or shake your phone to toss"),
         // Product names (shown instead of StoreKit displayName, so they follow the app language)

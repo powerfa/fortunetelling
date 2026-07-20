@@ -33,6 +33,7 @@ final class SoundPlayer {
 
     func playToss() { play("coin_toss") }
     func playReveal() { play("reveal") }
+    func playBrush() { play("brush") }
 }
 
 /// Looping meditation music while the incense burns.

@@ -6,6 +6,8 @@ struct SettingsView: View {
     @AppStorage("appLanguage") private var lang = "zh"
     @AppStorage("soundEnabled") private var soundEnabled = true
     @AppStorage("incenseMusicEnabled") private var incenseMusicEnabled = true
+    @AppStorage("dailyReminderEnabled") private var reminderEnabled = false
+    @AppStorage("dailyReminderMinutes") private var reminderMinutes = DailyReminder.defaultMinutes
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -40,6 +42,35 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                Section {
+                    Toggle(isOn: $reminderEnabled) {
+                        Label(L10n.t("daily_reminder", lang), systemImage: "bell.badge")
+                    }
+                    if reminderEnabled {
+                        DatePicker(
+                            L10n.t("reminder_time", lang),
+                            selection: Binding(
+                                get: {
+                                    Calendar.current.date(
+                                        bySettingHour: reminderMinutes / 60,
+                                        minute: reminderMinutes % 60,
+                                        second: 0, of: Date()) ?? Date()
+                                },
+                                set: { date in
+                                    let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+                                    reminderMinutes = (c.hour ?? 8) * 60 + (c.minute ?? 0)
+                                }
+                            ),
+                            displayedComponents: .hourAndMinute
+                        )
+                    }
+                } footer: {
+                    Text(L10n.t("daily_reminder_note", lang))
+                }
+                .onChange(of: reminderEnabled) { _, _ in syncReminder() }
+                .onChange(of: reminderMinutes) { _, _ in syncReminder() }
+                .onChange(of: lang) { _, _ in syncReminder() }
 
                 Section {
                     Text(L10n.t("about_text", lang))
@@ -77,6 +108,10 @@ struct SettingsView: View {
 }
 
 extension SettingsView {
+    private func syncReminder() {
+        DailyReminder.update(enabled: reminderEnabled, minutes: reminderMinutes, lang: lang)
+    }
+
     static var appVersion: String {
         let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
