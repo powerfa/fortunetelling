@@ -60,10 +60,11 @@ enum L10n {
         "recast_button":   ("重新起卦 · 10 福币", "Recast · 10 coins"),
         "recast_used":     ("今日重算机会已用完，明日再来", "Today's recast has been used — come back tomorrow"),
         "recast_confirm_title": ("消耗 10 福币重新起卦？", "Spend 10 coins to recast?"),
-        "recast_confirm_msg": ("每天仅可重算一次，当前卦象将被替换。", "You may recast only once per day. The current reading will be replaced."),
+        "recast_confirm_msg": ("当前卦象将被替换，历史中仅保留当日最新一卦。", "The current reading will be replaced; history keeps only the latest reading of the day."),
         "confirm":         ("确定", "Confirm"),
         "cancel":          ("取消", "Cancel"),
         "not_enough_coins": ("福币不足，去获取", "Not enough coins — get more"),
+        "recast_need_coins": ("福币不足，点按钮去签到或充值", "Not enough coins — tap to check in or top up"),
         // Store
         "store_title":     ("福币与会员", "Coins & Premium"),
         "balance":         ("当前福币", "Coin Balance"),

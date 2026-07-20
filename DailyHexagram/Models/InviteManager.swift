@@ -45,11 +45,63 @@ final class InviteManager: ObservableObject {
 
     private let container = CKContainer(identifier: "iCloud.com.dj.DailyHexagram")
     private var db: CKDatabase { container.publicCloudDatabase }
+    private let kv = NSUbiquitousKeyValueStore.default
+    private var observer: NSObjectProtocol?
 
     init() {
-        myCode = UserDefaults.standard.string(forKey: codeKey)
-        redeemed = UserDefaults.standard.bool(forKey: redeemedKey)
-        creditedCount = UserDefaults.standard.integer(forKey: creditedKey)
+        kv.synchronize()
+        let defaults = UserDefaults.standard
+        // Same iCloud account = same invite identity: share the code and
+        // redemption/claim state across the user's devices.
+        myCode = defaults.string(forKey: codeKey) ?? kv.string(forKey: codeKey)
+        redeemed = defaults.bool(forKey: redeemedKey) || kv.bool(forKey: redeemedKey)
+        creditedCount = max(defaults.integer(forKey: creditedKey),
+                            Int(kv.longLong(forKey: creditedKey)))
+        let claimed = Set(defaults.stringArray(forKey: claimedListKey) ?? [])
+            .union(kv.array(forKey: claimedListKey) as? [String] ?? [])
+        defaults.set(Array(claimed), forKey: claimedListKey)
+        persistState()
+        observer = NotificationCenter.default.addObserver(
+            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: kv,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in self.adoptRemote() }
+        }
+    }
+
+    deinit {
+        if let observer {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    private func adoptRemote() {
+        let defaults = UserDefaults.standard
+        if myCode == nil, let code = kv.string(forKey: codeKey) {
+            myCode = code
+        }
+        if kv.bool(forKey: redeemedKey) { redeemed = true }
+        creditedCount = max(creditedCount, Int(kv.longLong(forKey: creditedKey)))
+        let claimed = Set(defaults.stringArray(forKey: claimedListKey) ?? [])
+            .union(kv.array(forKey: claimedListKey) as? [String] ?? [])
+        defaults.set(Array(claimed), forKey: claimedListKey)
+        persistState()
+    }
+
+    private func persistState() {
+        let defaults = UserDefaults.standard
+        if let myCode {
+            defaults.set(myCode, forKey: codeKey)
+            kv.set(myCode, forKey: codeKey)
+        }
+        defaults.set(redeemed, forKey: redeemedKey)
+        kv.set(redeemed, forKey: redeemedKey)
+        defaults.set(creditedCount, forKey: creditedKey)
+        kv.set(Int64(creditedCount), forKey: creditedKey)
+        kv.set(defaults.stringArray(forKey: claimedListKey) ?? [], forKey: claimedListKey)
+        kv.synchronize()
     }
 
     // MARK: - Availability
@@ -75,7 +127,7 @@ final class InviteManager: ObservableObject {
                 do {
                     _ = try await db.save(record)
                     myCode = code
-                    UserDefaults.standard.set(code, forKey: codeKey)
+                    persistState()
                     return
                 } catch let error as CKError where error.code == .serverRecordChanged {
                     continue   // rare collision — try another code
@@ -144,7 +196,7 @@ final class InviteManager: ObservableObject {
 
     private func markRedeemed() {
         redeemed = true
-        UserDefaults.standard.set(true, forKey: redeemedKey)
+        persistState()
     }
 
     // MARK: - Gift codes (礼品码)
@@ -232,7 +284,6 @@ final class InviteManager: ObservableObject {
                     coins.add(Self.reward)
                     creditedCount += 1
                     gained += Self.reward
-                    UserDefaults.standard.set(creditedCount, forKey: creditedKey)
                 } catch let error as CKError where error.code == .serverRecordChanged {
                     // Claimed already (typically by another device of mine).
                 } catch {
@@ -240,6 +291,7 @@ final class InviteManager: ObservableObject {
                 }
                 claimed.insert(name)
                 UserDefaults.standard.set(Array(claimed), forKey: claimedListKey)
+                persistState()
             }
             if gained > 0 {
                 message = ("invite_reward_arrived", gained)

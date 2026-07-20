@@ -28,25 +28,60 @@ final class IncenseStore: ObservableObject {
     private let recordsKey = "incenseRecords"
     private let recordsLimit = 500
 
+    private let kv = NSUbiquitousKeyValueStore.default
+    private var observer: NSObjectProtocol?
+
     init() {
-        totalCount = UserDefaults.standard.integer(forKey: countKey)
-        if let data = UserDefaults.standard.data(forKey: recordsKey),
-           let list = try? JSONDecoder().decode([IncenseRecord].self, from: data) {
-            records = list
-        }
+        kv.synchronize()
+        totalCount = 0
+        mergeAndLoad()
+        // The physical burn stays device-local (only the device that lit it
+        // tracks and completes it); completed records sync across devices.
         let ts = UserDefaults.standard.double(forKey: startKey)
         if ts > 0 {
             let start = Date(timeIntervalSince1970: ts)
             if Date() >= start.addingTimeInterval(Self.duration) {
                 UserDefaults.standard.removeObject(forKey: startKey)
                 totalCount += 1
-                UserDefaults.standard.set(totalCount, forKey: countKey)
                 appendRecord(at: start.addingTimeInterval(Self.duration))
                 pendingCompletion = true
             } else {
                 burningStart = start
             }
         }
+        observer = NotificationCenter.default.addObserver(
+            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: kv,
+            queue: .main
+        ) { [weak self] _ in
+            self?.mergeAndLoad()
+        }
+    }
+
+    deinit {
+        if let observer {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    /// Merge local + cloud records (union by id) and counts (max), persist both.
+    private func mergeAndLoad() {
+        let defaults = UserDefaults.standard
+        let decode: (Data?) -> [IncenseRecord] = { data in
+            guard let data,
+                  let list = try? JSONDecoder().decode([IncenseRecord].self, from: data)
+            else { return [] }
+            return list
+        }
+        var seen = Set<UUID>()
+        let merged = (decode(defaults.data(forKey: recordsKey)) + decode(kv.data(forKey: recordsKey)))
+            .filter { seen.insert($0.id).inserted }
+            .sorted { $0.date > $1.date }
+        records = Array(merged.prefix(recordsLimit))
+        totalCount = max(defaults.integer(forKey: countKey),
+                         Int(kv.longLong(forKey: countKey)),
+                         records.count)
+        persist()
     }
 
     private func appendRecord(at date: Date) {
@@ -54,9 +89,18 @@ final class IncenseStore: ObservableObject {
         if records.count > recordsLimit {
             records = Array(records.prefix(recordsLimit))
         }
+        persist()
+    }
+
+    private func persist() {
+        let defaults = UserDefaults.standard
+        defaults.set(totalCount, forKey: countKey)
+        kv.set(Int64(totalCount), forKey: countKey)
         if let data = try? JSONEncoder().encode(records) {
-            UserDefaults.standard.set(data, forKey: recordsKey)
+            defaults.set(data, forKey: recordsKey)
+            kv.set(data, forKey: recordsKey)
         }
+        kv.synchronize()
     }
 
     var isBurning: Bool { burningStart != nil }
@@ -83,7 +127,6 @@ final class IncenseStore: ObservableObject {
         burningStart = nil
         UserDefaults.standard.removeObject(forKey: startKey)
         totalCount += 1
-        UserDefaults.standard.set(totalCount, forKey: countKey)
         appendRecord(at: Date())
     }
 }

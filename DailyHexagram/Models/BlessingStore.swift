@@ -67,35 +67,75 @@ final class BlessingStore: ObservableObject {
     private let freeKey = "blessingFreeDate"
     private let archiveLimit = 600
 
+    private let kv = NSUbiquitousKeyValueStore.default
+    private var observer: NSObjectProtocol?
+
     init() {
-        if let data = UserDefaults.standard.data(forKey: archiveKey),
-           let list = try? JSONDecoder().decode([HungCharm].self, from: data) {
-            archive = list
-        }
+        kv.synchronize()
         load()
+        observer = NotificationCenter.default.addObserver(
+            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: kv,
+            queue: .main
+        ) { [weak self] _ in
+            self?.load()
+        }
+    }
+
+    deinit {
+        if let observer {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 
     var isFreeAvailableToday: Bool { !freeUsedToday }
 
     func markFreeUsed() {
-        UserDefaults.standard.set(DailyStore.todayString, forKey: freeKey)
         freeUsedToday = true
+        persist()
     }
 
-    /// Reload from disk, dropping anything not hung today (每日焕新).
-    func load() {
-        freeUsedToday = UserDefaults.standard.string(forKey: freeKey) == DailyStore.todayString
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
+    private static func decode(_ data: Data?) -> [HungCharm] {
+        guard let data,
               let list = try? JSONDecoder().decode([HungCharm].self, from: data)
-        else {
-            charms = []
-            return
+        else { return [] }
+        return list
+    }
+
+    /// Merge local + cloud, drop anything not hung today (每日焕新), publish.
+    func load() {
+        let defaults = UserDefaults.standard
+        let today = DailyStore.todayString
+        // Free-charm flag: used if any device used it today.
+        freeUsedToday = defaults.string(forKey: freeKey) == today
+            || kv.string(forKey: freeKey) == today
+        // Today's tree: union by id across devices; resolve slot collisions.
+        var seen = Set<UUID>()
+        let merged = (Self.decode(defaults.data(forKey: storageKey))
+                      + Self.decode(kv.data(forKey: storageKey)))
+            .filter { $0.dateString == today && seen.insert($0.id).inserted }
+        var used = Set<Int>()
+        var placed: [HungCharm] = []
+        for var charm in merged where placed.count < Self.maxSlots {
+            if used.contains(charm.slot) {
+                guard let free = (0..<Self.maxSlots).first(where: { !used.contains($0) })
+                else { continue }
+                charm = HungCharm(id: charm.id, typeId: charm.typeId, wish: charm.wish,
+                                  slot: free, dateString: charm.dateString)
+            }
+            used.insert(charm.slot)
+            placed.append(charm)
         }
-        let today = list.filter { $0.dateString == DailyStore.todayString }
-        charms = today
-        if today.count != list.count {
-            persist()
-        }
+        charms = placed
+        // Archive: union by id, newest date first.
+        var seenArchive = Set<UUID>()
+        archive = Array(
+            (Self.decode(defaults.data(forKey: archiveKey)) + Self.decode(kv.data(forKey: archiveKey)))
+                .filter { seenArchive.insert($0.id).inserted }
+                .sorted { $0.dateString > $1.dateString }
+                .prefix(archiveLimit)
+        )
+        persist()
     }
 
     var isFull: Bool {
@@ -113,20 +153,28 @@ final class BlessingStore: ObservableObject {
                               slot: slot, dateString: DailyStore.todayString)
         charms.append(charm)
         lastHungID = charm.id
-        persist()
         archive.insert(charm, at: 0)
         if archive.count > archiveLimit {
             archive = Array(archive.prefix(archiveLimit))
         }
-        if let data = try? JSONEncoder().encode(archive) {
-            UserDefaults.standard.set(data, forKey: archiveKey)
-        }
+        persist()
         return charm
     }
 
     private func persist() {
+        let defaults = UserDefaults.standard
         if let data = try? JSONEncoder().encode(charms) {
-            UserDefaults.standard.set(data, forKey: storageKey)
+            defaults.set(data, forKey: storageKey)
+            kv.set(data, forKey: storageKey)
         }
+        if let data = try? JSONEncoder().encode(archive) {
+            defaults.set(data, forKey: archiveKey)
+            kv.set(data, forKey: archiveKey)
+        }
+        if freeUsedToday {
+            defaults.set(DailyStore.todayString, forKey: freeKey)
+            kv.set(DailyStore.todayString, forKey: freeKey)
+        }
+        kv.synchronize()
     }
 }

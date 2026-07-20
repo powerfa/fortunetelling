@@ -201,34 +201,24 @@ struct ResultView: View {
 
     // MARK: - Paid recast (once per day, 10 coins)
 
-    @ViewBuilder
     private var recastSection: some View {
-        if dailyStore.recastUsedToday {
-            Text(L10n.t("recast_used", lang))
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        } else if coins.balance >= CoinStore.recastCost {
+        VStack(spacing: 5) {
             Button {
-                showRecastAlert = true
+                if coins.balance >= CoinStore.recastCost {
+                    showRecastAlert = true
+                } else {
+                    showStore = true
+                }
             } label: {
                 Label(L10n.t("recast_button", lang), systemImage: "arrow.triangle.2.circlepath")
                     .font(.body.bold())
             }
             .buttonStyle(.bordered)
-        } else {
-            Button {
-                showStore = true
-            } label: {
-                HStack(spacing: 6) {
-                    Image("CoinIcon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                    Text(L10n.t("not_enough_coins", lang))
-                        .font(.body.bold())
-                }
+            if coins.balance < CoinStore.recastCost {
+                Text(L10n.t("recast_need_coins", lang))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.bordered)
         }
     }
 

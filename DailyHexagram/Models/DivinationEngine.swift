@@ -7,6 +7,9 @@ struct DivinationResult: Codable, Equatable {
     let values: [Int]
     let dateString: String
     var question: String? = nil   // 所问之事 (optional)
+    /// Creation time (unix epoch). Used to resolve same-day conflicts when
+    /// merging histories across devices; optional for backward compatibility.
+    var epoch: Double? = nil
 
     /// The primary (本卦) hexagram lines: 1 = yang, 0 = yin.
     var primaryLines: [Int] {
