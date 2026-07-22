@@ -8,7 +8,6 @@ import Foundation
 /// across their devices. UserDefaults keeps a local mirror as an offline /
 /// signed-out fallback. Check-in history is a set of "yyyy-MM-dd" strings.
 final class CoinStore: ObservableObject {
-    static let recastCost = 10
     static let baseReward = 1        // 普通用户每日签到
     static let premiumReward = 2     // 会员每日签到
 

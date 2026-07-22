@@ -9,14 +9,26 @@ import SwiftUI
 /// last-writer-wins so a recast (which clears it) propagates correctly.
 final class DailyStore: ObservableObject {
     @Published private(set) var todayResult: DivinationResult?
-    @Published private(set) var recastUsedToday = false
+    /// 每日 1 次免费起卦 + 最多 2 次付费重算。
+    @Published private(set) var recastCountToday = 0
     @Published private(set) var history: [DivinationResult] = []
+
+    static let maxRecastsPerDay = 2
+    /// 第一次重算 10 币，第二次 30 币。
+    static let recastCosts = [10, 30]
+
+    var nextRecastCost: Int {
+        Self.recastCosts[min(recastCountToday, Self.recastCosts.count - 1)]
+    }
 
     private let storageKey = "dailyDivinationResult"
     private let historyKey = "divinationHistory"
-    private let recastKey = "recastUsedDate"
+    private let recastDateKey = "recastUsedDate"
+    private let recastCountKey = "recastCountToday"
     private let syncMarkerKey = "dailySyncedOnce"
     private let historyLimit = 366
+
+    var recastsLeftToday: Int { max(0, Self.maxRecastsPerDay - recastCountToday) }
 
     private let kv = NSUbiquitousKeyValueStore.default
     private var observer: NSObjectProtocol?
@@ -72,7 +84,7 @@ final class DailyStore: ObservableObject {
 
     /// The app can stay in memory across midnight; re-derive "today" state.
     func refreshForNewDay() {
-        refreshRecastFlag()
+        refreshRecastCount()
         if let result = todayResult, result.dateString != Self.todayString {
             todayResult = nil
             persist()
@@ -80,31 +92,42 @@ final class DailyStore: ObservableObject {
         }
     }
 
-    /// Clears today's result for the once-per-day paid recast.
+    /// Clears today's result for a paid recast (max 2/day).
     /// Coin deduction happens in the caller.
     func startRecast() {
-        recastUsedToday = true
-        UserDefaults.standard.set(Self.todayString, forKey: recastKey)
-        kv.set(Self.todayString, forKey: recastKey)
+        refreshRecastCount()
+        recastCountToday += 1
+        let defaults = UserDefaults.standard
+        defaults.set(Self.todayString, forKey: recastDateKey)
+        defaults.set(recastCountToday, forKey: recastCountKey)
+        kv.set(Self.todayString, forKey: recastDateKey)
+        kv.set(Int64(recastCountToday), forKey: recastCountKey)
         todayResult = nil
         persist()
         WidgetBridge.update(result: nil)
     }
 
     func resetToday() {
-        recastUsedToday = false
-        UserDefaults.standard.removeObject(forKey: recastKey)
-        kv.removeObject(forKey: recastKey)
+        recastCountToday = 0
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: recastDateKey)
+        defaults.removeObject(forKey: recastCountKey)
+        kv.removeObject(forKey: recastDateKey)
+        kv.removeObject(forKey: recastCountKey)
         todayResult = nil
         persist()
         WidgetBridge.update(result: nil)
     }
 
-    /// Used today if ANY of the user's devices recast today (synced via iCloud).
-    private func refreshRecastFlag() {
+    /// Today's recast count = max across the user's devices (synced via iCloud).
+    private func refreshRecastCount() {
         let today = Self.todayString
-        recastUsedToday = UserDefaults.standard.string(forKey: recastKey) == today
-            || kv.string(forKey: recastKey) == today
+        let defaults = UserDefaults.standard
+        let local = defaults.string(forKey: recastDateKey) == today
+            ? defaults.integer(forKey: recastCountKey) : 0
+        let cloud = kv.string(forKey: recastDateKey) == today
+            ? Int(kv.longLong(forKey: recastCountKey)) : 0
+        recastCountToday = max(local, cloud)
     }
 
     // MARK: - Sync plumbing
@@ -127,7 +150,7 @@ final class DailyStore: ObservableObject {
     /// on the very first sync the local value is preserved and pushed up.
     private func mergeAndLoad(cloudAuthoritativeForToday: Bool) {
         let defaults = UserDefaults.standard
-        refreshRecastFlag()
+        refreshRecastCount()
         // --- history: union by date, newest epoch wins ---
         var byDate: [String: DivinationResult] = [:]
         for r in Self.decodeList(defaults.data(forKey: historyKey))

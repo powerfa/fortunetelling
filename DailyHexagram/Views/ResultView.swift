@@ -132,15 +132,18 @@ struct ResultView: View {
         .task(id: "\(result.dateString)-\(lang)") {
             renderShareCard()
         }
-        .alert(L10n.t("recast_confirm_title", lang), isPresented: $showRecastAlert) {
+        .alert(String(format: L10n.t("recast_confirm_title", lang), dailyStore.nextRecastCost),
+               isPresented: $showRecastAlert) {
             Button(L10n.t("confirm", lang), role: .destructive) {
-                if coins.spend(CoinStore.recastCost) {
+                if coins.spend(dailyStore.nextRecastCost) {
                     withAnimation { dailyStore.startRecast() }
                 }
             }
             Button(L10n.t("cancel", lang), role: .cancel) {}
         } message: {
-            Text(L10n.t("recast_confirm_msg", lang))
+            // 第一次与最后一次重算给不同的提醒
+            Text(L10n.t(dailyStore.recastsLeftToday >= 2 ? "recast_confirm_msg1"
+                                                         : "recast_confirm_msg2", lang))
         }
     }
 
@@ -234,24 +237,25 @@ struct ResultView: View {
 
     @ViewBuilder
     private var recastSection: some View {
-        if dailyStore.recastUsedToday {
+        if dailyStore.recastsLeftToday == 0 {
             Text(L10n.t("recast_used", lang))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         } else {
             VStack(spacing: 5) {
                 Button {
-                    if coins.balance >= CoinStore.recastCost {
+                    if coins.balance >= dailyStore.nextRecastCost {
                         showRecastAlert = true
                     } else {
                         showStore = true
                     }
                 } label: {
-                    Label(L10n.t("recast_button", lang), systemImage: "arrow.triangle.2.circlepath")
+                    Label(String(format: L10n.t("recast_button", lang), dailyStore.nextRecastCost),
+                          systemImage: "arrow.triangle.2.circlepath")
                         .font(.body.bold())
                 }
                 .buttonStyle(.bordered)
-                if coins.balance < CoinStore.recastCost {
+                if coins.balance < dailyStore.nextRecastCost {
                     Text(L10n.t("recast_need_coins", lang))
                         .font(.caption)
                         .foregroundStyle(.secondary)
