@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage("appLanguage") private var lang = "zh"
     @AppStorage("soundEnabled") private var soundEnabled = true
     @AppStorage("incenseMusicEnabled") private var incenseMusicEnabled = true
+    @AppStorage("castRitualEnabled") private var ritualEnabled = true
     @AppStorage("dailyReminderEnabled") private var reminderEnabled = false
     @AppStorage("dailyReminderMinutes") private var reminderMinutes = DailyReminder.defaultMinutes
     @Environment(\.dismiss) private var dismiss
@@ -26,6 +27,9 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle(isOn: $ritualEnabled) {
+                        Label(L10n.t("ritual_setting", lang), systemImage: "moon.stars.fill")
+                    }
                     Toggle(isOn: $soundEnabled) {
                         Label(L10n.t("sound", lang), systemImage: "speaker.wave.2.fill")
                     }

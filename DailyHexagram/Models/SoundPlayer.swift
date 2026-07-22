@@ -31,9 +31,24 @@ final class SoundPlayer {
         player.play()
     }
 
+    /// Fade out and stop a named sound (used when the user skips a ritual).
+    private func stop(_ name: String, fade: TimeInterval = 0.5) {
+        guard let player = players[name], player.isPlaying else { return }
+        player.setVolume(0, fadeDuration: fade)
+        DispatchQueue.main.asyncAfter(deadline: .now() + fade + 0.05) {
+            player.stop()
+            player.volume = 1   // ready for the next play
+        }
+    }
+
     func playToss() { play("coin_toss") }
     func playReveal() { play("reveal") }
     func playBrush() { play("brush") }
+    func playQing() { play("qing") }            // 长磬：渐入，覆盖呼吸引导
+    func playQingShort() { play("qing_short") } // 短磬：揭卦一响
+    func playStamp() { play("stamp") }          // 朱印盖下
+    func stopQing() { stop("qing") }
+    func stopQingShort() { stop("qing_short") }
 }
 
 /// Looping meditation music while the incense burns.

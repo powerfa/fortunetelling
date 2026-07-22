@@ -5,6 +5,12 @@ import UIKit
 struct CastView: View {
     @EnvironmentObject private var store: DailyStore
     @AppStorage("appLanguage") private var lang = "zh"
+    @AppStorage("castRitualEnabled") private var ritualEnabled = true
+
+    private enum Phase { case intro, tossing }
+    @State private var phase: Phase = .intro
+    @State private var showRitual = false
+    @State private var showReveal = false
 
     @State private var values: [Int] = []
     @State private var lastCoins: [Bool] = []
@@ -14,10 +20,58 @@ struct CastView: View {
     @FocusState private var questionFocused: Bool
 
     var body: some View {
+        Group {
+            if phase == .intro {
+                introView
+            } else {
+                tossingView
+            }
+        }
+        .fullScreenCover(isPresented: $showRitual) {
+            CastRitualView(question: question.trimmingCharacters(in: .whitespaces)) {
+                withAnimation { phase = .tossing }
+            }
+            .presentationBackground(.clear)
+        }
+        .fullScreenCover(isPresented: $showReveal) {
+            RevealRitualView(values: values, question: question) {
+                withAnimation(.easeInOut) {
+                    store.save(values: values, question: question)
+                }
+            }
+            .presentationBackground(.clear)
+        }
+    }
+
+    /// Present a cover without the system slide — our views fade themselves.
+    private func presentGently(_ flag: Binding<Bool>) {
+        var t = Transaction()
+        t.disablesAnimations = true
+        withTransaction(t) { flag.wrappedValue = true }
+    }
+
+    /// 时辰问候：晨/午/夜各有其语。
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<11:  return L10n.t("greeting_morning", lang)
+        case 11..<17: return L10n.t("greeting_noon", lang)
+        default:      return L10n.t("greeting_night", lang)
+        }
+    }
+
+    // MARK: - 静前：写下所问，开启仪式
+
+    private var introView: some View {
         VStack(spacing: 18) {
             Text(L10n.dateText(lang: lang))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+
+            Text(greeting)
+                .font(.system(.title3, design: .serif))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
 
             // 曾仕强「三不占」原则
             Text(L10n.t("three_no", lang))
@@ -27,27 +81,69 @@ struct CastView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal)
 
+            TextField(L10n.t("question_placeholder", lang), text: $question, axis: .vertical)
+                .focused($questionFocused)
+                .font(.callout)
+                .padding(10)
+                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal)
+                .submitLabel(.done)
+                .onChange(of: question) { _, newValue in
+                    if newValue.contains("\n") {
+                        question = newValue.replacingOccurrences(of: "\n", with: "")
+                        questionFocused = false
+                    }
+                }
+
+            Spacer()
+
+            VStack(spacing: 10) {
+                Button {
+                    questionFocused = false
+                    if ritualEnabled {
+                        presentGently($showRitual)
+                    } else {
+                        withAnimation { phase = .tossing }
+                    }
+                } label: {
+                    Text(L10n.t("start_cast", lang))
+                        .font(.title3.bold())
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.borderedProminent)
+
+                if ritualEnabled {
+                    Button {
+                        questionFocused = false
+                        withAnimation { phase = .tossing }
+                    } label: {
+                        Text(L10n.t("quick_cast", lang))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding()
+        .ignoresSafeArea(.keyboard, edges: .bottom)
+    }
+
+    // MARK: - 掷币
+
+    private var tossingView: some View {
+        VStack(spacing: 18) {
+            Text(L10n.dateText(lang: lang))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
             Text(L10n.t("cast_prompt", lang))
                 .font(.system(.body, design: .serif))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal)
 
-            if values.isEmpty {
-                TextField(L10n.t("question_placeholder", lang), text: $question, axis: .vertical)
-                    .focused($questionFocused)
-                    .font(.callout)
-                    .padding(10)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
-                    .padding(.horizontal)
-                    .submitLabel(.done)
-                    .onChange(of: question) { _, newValue in
-                        if newValue.contains("\n") {
-                            question = newValue.replacingOccurrences(of: "\n", with: "")
-                            questionFocused = false
-                        }
-                    }
-            } else if !question.trimmingCharacters(in: .whitespaces).isEmpty {
+            if !question.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text("\(L10n.t("question_label", lang))：\(question)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -101,10 +197,7 @@ struct CastView: View {
                 }
             } else {
                 Button {
-                    SoundPlayer.shared.playReveal()
-                    withAnimation(.easeInOut) {
-                        store.save(values: values, question: question)
-                    }
+                    presentGently($showReveal)
                 } label: {
                     Text(L10n.t("reveal_button", lang))
                         .font(.title3.bold())
@@ -120,7 +213,7 @@ struct CastView: View {
         // question field (top of the page) out of view behind the nav bar.
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
-            if values.count < 6 && !isTossing {
+            if phase == .tossing && values.count < 6 && !isTossing {
                 toss()
             }
         }
