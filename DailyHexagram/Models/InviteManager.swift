@@ -43,7 +43,7 @@ final class InviteManager: ObservableObject {
     private let creditedKey = "inviteCreditedCount"
     private let claimedListKey = "inviteClaimedRedemptions"
 
-    private let container = CKContainer(identifier: "iCloud.com.dj.DailyHexagram")
+    private let container = CKContainer(identifier: "iCloud.com.octlex.dailyhexagram")
     private var db: CKDatabase { container.publicCloudDatabase }
     private let kv = NSUbiquitousKeyValueStore.default
     private var observer: NSObjectProtocol?

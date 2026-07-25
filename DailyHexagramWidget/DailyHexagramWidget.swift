@@ -19,7 +19,7 @@ struct HexSnapshot: Codable {
 }
 
 private enum Shared {
-    static let appGroup = "group.com.dj.DailyHexagram"
+    static let appGroup = "group.com.octlex.dailyhexagram"
     static let snapshotKey = "widgetSnapshot"
     static let premiumKey = "widgetPremium"
     static let langKey = "widgetLang"
@@ -96,9 +96,14 @@ struct HexProvider: TimelineProvider {
 /// Simplified→Traditional conversion for the widget (mirrors the app's `Lang`).
 private enum Hant {
     private static let cache = NSCache<NSString, NSString>()
+    /// Keep in sync with the app's `Lang.corrections` (ICU 误伤纠正).
+    private static let corrections: [(String, String)] = [("佔", "占"), ("蔔", "卜")]
     static func convert(_ s: String) -> String {
         if let hit = cache.object(forKey: s as NSString) { return hit as String }
-        let out = (s as NSString).applyingTransform(StringTransform("Hans-Hant"), reverse: false) ?? s
+        var out = (s as NSString).applyingTransform(StringTransform("Hans-Hant"), reverse: false) ?? s
+        for (wrong, right) in corrections {
+            out = out.replacingOccurrences(of: wrong, with: right)
+        }
         cache.setObject(out as NSString, forKey: s as NSString)
         return out
     }

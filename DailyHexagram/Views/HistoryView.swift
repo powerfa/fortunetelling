@@ -42,7 +42,7 @@ struct HistoryView: View {
         } else {
             List {
                 Section {
-                    ForEach(store.history, id: \.dateString) { result in
+                    ForEach(store.history, id: \.uid) { result in
                         NavigationLink {
                             ResultView(result: result, isHistory: true)
                                 .navigationTitle(result.dateString)
@@ -75,7 +75,8 @@ struct HistoryView: View {
                         .background(Capsule().fill(Color.accentColor.opacity(0.13)))
                         .foregroundStyle(Color.accentColor)
                 }
-                Text("\(result.dateString) · \(result.question ?? L10n.t("default_question", lang))")
+                // 同日多卦时以精确时间区分
+                Text("\(historyStamp(result)) · \(result.question ?? L10n.t("default_question", lang))")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -147,6 +148,13 @@ struct HistoryView: View {
                 }
             }
         }
+    }
+
+    private func historyStamp(_ result: DivinationResult) -> String {
+        if let epoch = result.epoch {
+            return Self.timestamp(Date(timeIntervalSince1970: epoch), lang: lang)
+        }
+        return result.dateString
     }
 
     // MARK: - Shared

@@ -9,26 +9,29 @@ import SwiftUI
 /// last-writer-wins so a recast (which clears it) propagates correctly.
 final class DailyStore: ObservableObject {
     @Published private(set) var todayResult: DivinationResult?
-    /// 每日 1 次免费起卦 + 最多 2 次付费重算。
+    /// 今日已重算次数（不设上限，价格阶梯递增）。
     @Published private(set) var recastCountToday = 0
     @Published private(set) var history: [DivinationResult] = []
 
-    static let maxRecastsPerDay = 2
-    /// 第一次重算 10 币，第二次 30 币。
-    static let recastCosts = [10, 30]
-
-    var nextRecastCost: Int {
-        Self.recastCosts[min(recastCountToday, Self.recastCosts.count - 1)]
+    /// 重算不设次数上限，但价格阶梯递增以践行「再三渎，渎则不告」：
+    /// 第1次 10，第2次 30，此后每次 ×10（300、3000、30000……）。
+    static func recastCost(forCount count: Int) -> Int {
+        switch count {
+        case 0:  return 10
+        case 1:  return 30
+        default: return 30 * Int(pow(10.0, Double(count - 1)))
+        }
     }
+
+    var nextRecastCost: Int { Self.recastCost(forCount: recastCountToday) }
 
     private let storageKey = "dailyDivinationResult"
     private let historyKey = "divinationHistory"
     private let recastDateKey = "recastUsedDate"
     private let recastCountKey = "recastCountToday"
     private let syncMarkerKey = "dailySyncedOnce"
-    private let historyLimit = 366
+    private let historyLimit = 1000   // 每日可有多卦（重算保留全部）
 
-    var recastsLeftToday: Int { max(0, Self.maxRecastsPerDay - recastCountToday) }
 
     private let kv = NSUbiquitousKeyValueStore.default
     private var observer: NSObjectProtocol?
@@ -71,8 +74,11 @@ final class DailyStore: ObservableObject {
                                       question: (trimmed?.isEmpty ?? true) ? nil : trimmed,
                                       epoch: Date().timeIntervalSince1970)
         todayResult = result
-        // Replace any same-day entry (recast), newest first.
-        var list = history.filter { $0.dateString != result.dateString }
+        // 评分请求计数：完成起卦的总次数（本地即可，无需同步）。
+        let castCount = UserDefaults.standard.integer(forKey: "castCompletedCount") + 1
+        UserDefaults.standard.set(castCount, forKey: "castCompletedCount")
+        // Keep EVERY reading (recasts included), newest first.
+        var list = history
         list.insert(result, at: 0)
         if list.count > historyLimit {
             list = Array(list.prefix(historyLimit))
@@ -151,18 +157,20 @@ final class DailyStore: ObservableObject {
     private func mergeAndLoad(cloudAuthoritativeForToday: Bool) {
         let defaults = UserDefaults.standard
         refreshRecastCount()
-        // --- history: union by date, newest epoch wins ---
-        var byDate: [String: DivinationResult] = [:]
+        // --- history: union by unique id (all readings survive, incl. recasts) ---
+        var byUID: [String: DivinationResult] = [:]
         for r in Self.decodeList(defaults.data(forKey: historyKey))
                + Self.decodeList(kv.data(forKey: historyKey)) {
-            if let current = byDate[r.dateString] {
-                if (r.epoch ?? 0) > (current.epoch ?? 0) { byDate[r.dateString] = r }
-            } else {
-                byDate[r.dateString] = r
-            }
+            byUID[r.uid] = r
         }
-        history = Array(byDate.values.sorted { $0.dateString > $1.dateString }
-            .prefix(historyLimit))
+        history = Array(
+            byUID.values.sorted {
+                $0.dateString != $1.dateString
+                    ? $0.dateString > $1.dateString
+                    : ($0.epoch ?? 0) > ($1.epoch ?? 0)
+            }
+            .prefix(historyLimit)
+        )
         // --- today's result ---
         let localToday = Self.decodeOne(defaults.data(forKey: storageKey))
             .flatMap { $0.dateString == Self.todayString ? $0 : nil }

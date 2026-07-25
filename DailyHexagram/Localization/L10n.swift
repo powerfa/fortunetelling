@@ -18,9 +18,18 @@ enum Lang {
 
     private static let cache = NSCache<NSString, NSString>()
 
+    /// ICU 字级转换的已知误伤（本 App 语境下恒不成立的映射），转换后纠正。
+    private static let corrections: [(String, String)] = [
+        ("佔", "占"),   // 占卜之「占」被误转为占用之「佔」
+        ("蔔", "卜"),   // 卜卦之「卜」被误转为萝卜之「蔔」
+    ]
+
     static func convert(_ s: String) -> String {
         if let hit = cache.object(forKey: s as NSString) { return hit as String }
-        let out = (s as NSString).applyingTransform(StringTransform("Hans-Hant"), reverse: false) ?? s
+        var out = (s as NSString).applyingTransform(StringTransform("Hans-Hant"), reverse: false) ?? s
+        for (wrong, right) in corrections {
+            out = out.replacingOccurrences(of: wrong, with: right)
+        }
         cache.setObject(out as NSString, forKey: s as NSString)
         return out
     }
@@ -60,8 +69,9 @@ enum L10n {
         "recast_button":   ("重新起卦 · %d 福币", "Recast · %d coins"),
         "recast_used":     ("今日重算机会已用完，明日再来", "Today's recasts are used up — come back tomorrow"),
         "recast_confirm_title": ("消耗 %d 福币重新起卦？", "Spend %d coins to recast?"),
-        "recast_confirm_msg1": ("当前卦象将被替换。若心中另有一事，换一事再问可也；同一件事不宜重占。今日还可重算两次（第二次需 30 福币）。", "This replaces today's reading. If another matter weighs on you, ask about that instead — do not recast the same question. Two recasts remain today (the second costs 30 coins)."),
-        "recast_confirm_msg2": ("这是今日最后一次重算。《易》曰：初筮告，再三渎，渎则不告——切莫为同一件事反复起卦。", "This is your last recast today. The Yi warns: the first casting answers, and asking again and again clouds the oracle — never recast the same question."),
+        "recast_confirm_msg1": ("当前卦象将被替换（原卦仍存于历史）。若心中另有一事，换一事再问可也；同一件事不宜重占。", "This replaces today's reading (the original stays in your history). If another matter weighs on you, ask about that instead — do not recast the same question."),
+        "recast_confirm_msg2": ("《易》曰：初筮告，再三渎，渎则不告。此后每次重算，价格将十倍递增——慎之。", "The Yi warns: the first casting answers, and asking again and again clouds the oracle. From here on, each recast costs tenfold the last — proceed with care."),
+        "recast_confirm_msg3": ("你今日已再三占问。渎则不告——卦不欺人，人自欺也。此次重算需 %d 福币，劝君三思。", "You have asked again and again today. A profaned oracle gives no answer — the hexagram does not deceive; we deceive ourselves. This recast costs %d coins. Think twice."),
         "confirm":         ("确定", "Confirm"),
         "cancel":          ("取消", "Cancel"),
         "not_enough_coins": ("福币不足，去获取", "Not enough coins — get more"),

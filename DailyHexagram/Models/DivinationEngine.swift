@@ -7,9 +7,13 @@ struct DivinationResult: Codable, Equatable {
     let values: [Int]
     let dateString: String
     var question: String? = nil   // 所问之事 (optional)
-    /// Creation time (unix epoch). Used to resolve same-day conflicts when
-    /// merging histories across devices; optional for backward compatibility.
+    /// Creation time (unix epoch). Distinguishes multiple same-day readings
+    /// and resolves merge conflicts across devices; optional for backward
+    /// compatibility with entries saved before this field existed.
     var epoch: Double? = nil
+
+    /// Stable unique identity for lists & cross-device history merging.
+    var uid: String { "\(dateString)#\(Int((epoch ?? 0) * 1000))" }
 
     /// The primary (本卦) hexagram lines: 1 = yang, 0 = yin.
     var primaryLines: [Int] {

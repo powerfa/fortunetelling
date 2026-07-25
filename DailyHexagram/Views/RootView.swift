@@ -77,6 +77,13 @@ struct RootView: View {
     }
 }
 
+/// 揭卦请求：values+question，用 item 型全屏层承载。
+private struct RevealRequest: Identifiable {
+    let id = UUID()
+    let values: [Int]
+    let question: String
+}
+
 struct TodayTab: View {
     @EnvironmentObject private var store: DailyStore
     @EnvironmentObject private var coins: CoinStore
@@ -84,6 +91,7 @@ struct TodayTab: View {
     @State private var showSettings = false
     @State private var showStore = false
     @State private var showGuide = false
+    @State private var revealRequest: RevealRequest? = nil
 
     var body: some View {
         NavigationStack {
@@ -91,7 +99,14 @@ struct TodayTab: View {
                 if let result = store.todayResult {
                     ResultView(result: result)
                 } else {
-                    CastView()
+                    CastView { values, question in
+                        // 无系统动画呈现：过场自己负责淡入淡出
+                        var t = Transaction()
+                        t.disablesAnimations = true
+                        withTransaction(t) {
+                            revealRequest = RevealRequest(values: values, question: question)
+                        }
+                    }
                 }
             }
             .background(Color(.systemGroupedBackground))
@@ -135,6 +150,16 @@ struct TodayTab: View {
             }
             .sheet(isPresented: $showGuide) {
                 GuideView()
+            }
+            // 揭卦过场挂在 TodayTab（稳定宿主）：保存卦象导致 CastView 被
+            // ResultView 替换时，过场层不受影响，淡出动画完整走完。
+            .fullScreenCover(item: $revealRequest) { request in
+                RevealRitualView(values: request.values, question: request.question) {
+                    withAnimation(.easeInOut) {
+                        store.save(values: request.values, question: request.question)
+                    }
+                }
+                .presentationBackground(.clear)
             }
         }
     }

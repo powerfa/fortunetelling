@@ -6,7 +6,7 @@
 锚定"长期用户才划算"，避免蚕食订阅收入。
 
 **产品设计**
-- 产品 ID：`com.dj.DailyHexagram.premium.lifetime`，类型 **Non-Consumable**（非消耗型）
+- 产品 ID：`com.octlex.dailyhexagram.premium.lifetime`，类型 **Non-Consumable**（非消耗型）
 - 建议定价：$29.99（对照月度/年度定价调整，保持 ≈3×年费）
 - 权益与订阅会员完全一致（四维详批、Widget、双倍签到）
 - 购买页展示顺序：月度 → 年度 → 终身（终身标"一次购买，永久有效"角标）
@@ -23,7 +23,7 @@
 
 **工作量估计**：半天（含测试）。
 
-## 2. 评分请求（SKStoreReviewController）
+## 2. 评分请求（已实现 ✅）
 
 **目标**：上架初期积累评分，提升商店转化。Apple 限制每年最多向同一用户弹 3 次，
 触发时机必须选在"用户刚获得正向体验"的瞬间。

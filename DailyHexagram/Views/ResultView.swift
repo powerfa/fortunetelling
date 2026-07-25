@@ -1,7 +1,9 @@
 import SwiftUI
 import UIKit
+import StoreKit
 
 struct ResultView: View {
+    @Environment(\.requestReview) private var requestReview
     let result: DivinationResult
     var isHistory: Bool = false
     @EnvironmentObject private var dailyStore: DailyStore
@@ -132,6 +134,9 @@ struct ResultView: View {
         .task(id: "\(result.dateString)-\(lang)") {
             renderShareCard()
         }
+        .task {
+            await maybeRequestReview()
+        }
         .alert(String(format: L10n.t("recast_confirm_title", lang), dailyStore.nextRecastCost),
                isPresented: $showRecastAlert) {
             Button(L10n.t("confirm", lang), role: .destructive) {
@@ -141,10 +146,33 @@ struct ResultView: View {
             }
             Button(L10n.t("cancel", lang), role: .cancel) {}
         } message: {
-            // 第一次与最后一次重算给不同的提醒
-            Text(L10n.t(dailyStore.recastsLeftToday >= 2 ? "recast_confirm_msg1"
-                                                         : "recast_confirm_msg2", lang))
+            // 警告随重算次数递进升级
+            Text(recastWarning)
         }
+    }
+
+    /// 第1次：换事再问；第2次：再三渎警告+预告十倍递增；第3次起：严正劝阻。
+    private var recastWarning: String {
+        switch dailyStore.recastCountToday {
+        case 0:  return L10n.t("recast_confirm_msg1", lang)
+        case 1:  return L10n.t("recast_confirm_msg2", lang)
+        default: return String(format: L10n.t("recast_confirm_msg3", lang),
+                               dailyStore.nextRecastCost)
+        }
+    }
+
+    /// 评分请求：第 3 次完成起卦后、停留 2 秒时触发；每个版本最多一次；
+    /// 只在正向场景（查看今日结果）出现，历史回看不触发。
+    private func maybeRequestReview() async {
+        guard !isHistory else { return }
+        let defaults = UserDefaults.standard
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        guard defaults.integer(forKey: "castCompletedCount") >= 3,
+              defaults.string(forKey: "lastReviewRequestVersion") != version
+        else { return }
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        defaults.set(version, forKey: "lastReviewRequestVersion")
+        requestReview()   // 系统自行决定是否真的弹窗
     }
 
     // MARK: - Share
@@ -233,33 +261,26 @@ struct ResultView: View {
         }
     }
 
-    // MARK: - Paid recast (once per day, 10 coins)
+    // MARK: - Paid recast (unlimited; price escalates per 「再三渎」)
 
-    @ViewBuilder
     private var recastSection: some View {
-        if dailyStore.recastsLeftToday == 0 {
-            Text(L10n.t("recast_used", lang))
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        } else {
-            VStack(spacing: 5) {
-                Button {
-                    if coins.balance >= dailyStore.nextRecastCost {
-                        showRecastAlert = true
-                    } else {
-                        showStore = true
-                    }
-                } label: {
-                    Label(String(format: L10n.t("recast_button", lang), dailyStore.nextRecastCost),
-                          systemImage: "arrow.triangle.2.circlepath")
-                        .font(.body.bold())
+        VStack(spacing: 5) {
+            Button {
+                if coins.balance >= dailyStore.nextRecastCost {
+                    showRecastAlert = true
+                } else {
+                    showStore = true
                 }
-                .buttonStyle(.bordered)
-                if coins.balance < dailyStore.nextRecastCost {
-                    Text(L10n.t("recast_need_coins", lang))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            } label: {
+                Label(String(format: L10n.t("recast_button", lang), dailyStore.nextRecastCost),
+                      systemImage: "arrow.triangle.2.circlepath")
+                    .font(.body.bold())
+            }
+            .buttonStyle(.bordered)
+            if coins.balance < dailyStore.nextRecastCost {
+                Text(L10n.t("recast_need_coins", lang))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }

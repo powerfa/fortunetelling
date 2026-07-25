@@ -4,7 +4,7 @@ import WidgetKit
 /// Writes today's result + premium/language state into the App Group so the
 /// widget extension can render it. Keep `Snapshot` in sync with the widget's `HexSnapshot`.
 enum WidgetBridge {
-    static let appGroup = "group.com.dj.DailyHexagram"
+    static let appGroup = "group.com.octlex.dailyhexagram"
     static let snapshotKey = "widgetSnapshot"
     static let premiumKey = "widgetPremium"
     static let langKey = "widgetLang"

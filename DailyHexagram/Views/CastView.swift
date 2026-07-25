@@ -3,6 +3,10 @@ import UIKit
 
 /// Interactive three-coin casting: tap (or shake the device) six times, one line per toss, bottom up.
 struct CastView: View {
+    /// 六爻掷毕：交由父级（TodayTab）展示揭卦过场并保存。
+    /// 过场层必须挂在不会被 ResultView 替换销毁的稳定父级上。
+    var onReveal: (_ values: [Int], _ question: String) -> Void = { _, _ in }
+
     @EnvironmentObject private var store: DailyStore
     @AppStorage("appLanguage") private var lang = "zh"
     @AppStorage("castRitualEnabled") private var ritualEnabled = true
@@ -10,7 +14,6 @@ struct CastView: View {
     private enum Phase { case intro, tossing }
     @State private var phase: Phase = .intro
     @State private var showRitual = false
-    @State private var showReveal = false
 
     @State private var values: [Int] = []
     @State private var lastCoins: [Bool] = []
@@ -30,14 +33,6 @@ struct CastView: View {
         .fullScreenCover(isPresented: $showRitual) {
             CastRitualView(question: question.trimmingCharacters(in: .whitespaces)) {
                 withAnimation { phase = .tossing }
-            }
-            .presentationBackground(.clear)
-        }
-        .fullScreenCover(isPresented: $showReveal) {
-            RevealRitualView(values: values, question: question) {
-                withAnimation(.easeInOut) {
-                    store.save(values: values, question: question)
-                }
             }
             .presentationBackground(.clear)
         }
@@ -197,7 +192,7 @@ struct CastView: View {
                 }
             } else {
                 Button {
-                    presentGently($showReveal)
+                    onReveal(values, question)
                 } label: {
                     Text(L10n.t("reveal_button", lang))
                         .font(.title3.bold())
