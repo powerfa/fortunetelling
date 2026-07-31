@@ -17,9 +17,8 @@ final class InviteManager: ObservableObject {
     static let reward = 20          // 双方各得
     static let maxInvites = 10     // 邀请人封顶（10 人 = 200 币）
 
-    /// App Store 链接：在 App Store Connect 创建 App 后把数字 ID 填进来，
-    /// 例如 "https://apps.apple.com/app/id6740000000"。留空则分享文案不带链接。
-    static let appStoreURLString = ""
+    /// App Store 链接（Apple ID: 6796206797），随邀请分享文案附带。
+    static let appStoreURLString = "https://apps.apple.com/app/id6796206797"
 
     /// Share text for the invite: code on its own line + download link (once configured).
     static func shareText(code: String, lang: String) -> String {
@@ -43,7 +42,7 @@ final class InviteManager: ObservableObject {
     private let creditedKey = "inviteCreditedCount"
     private let claimedListKey = "inviteClaimedRedemptions"
 
-    private let container = CKContainer(identifier: "iCloud.com.dj.DailyHexagram")
+    private let container = CKContainer(identifier: "iCloud.com.octlex.hexagram")
     private var db: CKDatabase { container.publicCloudDatabase }
     private let kv = NSUbiquitousKeyValueStore.default
     private var observer: NSObjectProtocol?

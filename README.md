@@ -29,7 +29,7 @@
 
 ## Widget 配置说明
 
-工程含两个 target：主 App 与 `DailyHexagramWidget`（Widget Extension），通过 App Group `group.com.dj.DailyHexagram` 共享数据。
+工程含两个 target：主 App 与 `DailyHexagramWidget`（Widget Extension），通过 App Group `group.com.octlex.hexagram` 共享数据。
 
 - 模拟器可直接运行（App Group 无需配置）
 - 真机运行需在两个 target 的 Signing & Capabilities 中选择你的团队，并在开发者账号里注册该 App Group（或改成你自己的 group ID，同时修改 `WidgetBridge.swift` 和 `DailyHexagramWidget.swift` 中的 `appGroup` 常量）
@@ -43,7 +43,7 @@
 3. 运行后即可测试订阅与买币；DEBUG 构建下商店页还有"开启会员"测试开关
 
 上架时需在 App Store Connect 创建同 ID 的产品：
-`com.dj.DailyHexagram.premium.monthly / .premium.yearly / .coins30 / .coins180 / .coins800 / .coins2500`
+`com.octlex.dailyhexagram.premium.monthly / .premium.yearly / .coins30 / .coins180 / .coins800 / .coins2500`
 
 ## 运行
 

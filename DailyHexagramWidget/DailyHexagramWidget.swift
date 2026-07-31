@@ -19,7 +19,7 @@ struct HexSnapshot: Codable {
 }
 
 private enum Shared {
-    static let appGroup = "group.com.dj.DailyHexagram"
+    static let appGroup = "group.com.octlex.hexagram"
     static let snapshotKey = "widgetSnapshot"
     static let premiumKey = "widgetPremium"
     static let langKey = "widgetLang"
