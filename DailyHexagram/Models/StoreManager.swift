@@ -130,5 +130,5 @@ final class StoreManager: ObservableObject {
 /// must be a live page before submission — see README.
 enum LegalLinks {
     static let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
-    static let privacyPolicy = URL(string: "https://dejunjiang316.github.io/daily-hexagram/privacy.html")!
+    static let privacyPolicy = URL(string: "https://octlex.com/privacy/daily-hexagram/")!
 }
